@@ -256,6 +256,10 @@ def profile(request, username=None):
     created_rooms = StudyRoom.objects.filter(created_by=user).select_related('topic')[:10]
     recent_sessions = StudySession.objects.filter(user=user, is_completed=True).select_related('room')[:10]
 
+    # Get followers and following
+    followers = Follow.objects.filter(followed=user).select_related('follower', 'follower__profile')[:20]
+    following = Follow.objects.filter(follower=user).select_related('followed', 'followed__profile')[:20]
+
     # Check if current user follows this user
     is_following = False
     if request.user.is_authenticated and request.user != user:
@@ -266,6 +270,8 @@ def profile(request, username=None):
         'profile': profile,
         'created_rooms': created_rooms,
         'recent_sessions': recent_sessions,
+        'followers': followers,
+        'following': following,
         'is_following': is_following,
         'is_own_profile': request.user == user,
     }
