@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User
 from django.db import models
+from django.core.paginator import Paginator
 from .models import StudyRoom, Topic, RoomParticipant, StudySession, UserProfile, Follow
 
 
@@ -64,11 +65,22 @@ def room_list(request):
     if query:
         rooms = rooms.filter(name__icontains=query) | rooms.filter(description__icontains=query)
 
+    # Order by status (active first) then by created date
+    rooms = rooms.order_by('-status', '-created_at')
+
+    # Pagination
+    paginator = Paginator(rooms, 12)  # 12 rooms per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     # Get topics for filter sidebar
     topics = Topic.objects.filter(is_active=True).order_by('order', 'name')
 
     context = {
-        'rooms': rooms,
+        'rooms': page_obj,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'is_paginated': page_obj.has_other_pages(),
         'topics': topics,
         'current_topic': topic_slug,
         'current_status': status,
