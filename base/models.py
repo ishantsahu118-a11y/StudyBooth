@@ -52,6 +52,7 @@ class StudyRoom(models.Model):
     # Timer settings (for pomodoro/custom)
     focus_duration = models.PositiveIntegerField(default=25, help_text="Focus duration in minutes")
     break_duration = models.PositiveIntegerField(default=5, help_text="Break duration in minutes")
+    long_break_duration = models.PositiveIntegerField(default=15, help_text="Long break duration in minutes")
     cycles = models.PositiveIntegerField(default=4, help_text="Number of focus/break cycles")
 
     # Features
@@ -62,9 +63,14 @@ class StudyRoom(models.Model):
     enable_whiteboard = models.BooleanField(default=False)
     enable_resources = models.BooleanField(default=True)
 
+    # Chat moderation
+    chat_silent_mode = models.BooleanField(default=False, help_text="Host can toggle silent mode during focus time")
+
     # Access control
     is_private = models.BooleanField(default=False, help_text="Require invite or approval to join")
     password = models.CharField(max_length=100, blank=True, help_text="Optional room password")
+    invite_code = models.CharField(max_length=12, blank=True, unique=True, null=True, help_text="Unique invite code for private rooms")
+    topic_color = models.CharField(max_length=7, default="#6366f1", help_text="Hex color code for room theme")
 
     # Scheduling
     scheduled_start = models.DateTimeField(null=True, blank=True)
@@ -132,6 +138,19 @@ class RoomParticipant(models.Model):
     has_audio = models.BooleanField(default=False)
     is_muted = models.BooleanField(default=True)
     is_camera_off = models.BooleanField(default=True)
+
+    # Presence
+    current_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('focusing', 'Focusing'),
+            ('on_break', 'On Break'),
+            ('away', 'Away'),
+            ('idle', 'Idle'),
+        ],
+        default='focusing'
+    )
+    last_seen = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ['room', 'user', 'joined_at']
@@ -293,3 +312,20 @@ class RoomInvitation(models.Model):
 
     def __str__(self):
         return f"Invitation to {self.room.name} for {self.invited_user.username}"
+
+
+class RoomChatMessage(models.Model):
+    """Chat messages in study rooms"""
+    room = models.ForeignKey(StudyRoom, on_delete=models.CASCADE, related_name='chat_messages')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_messages')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['room', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} in {self.room.name}: {self.content[:50]}"

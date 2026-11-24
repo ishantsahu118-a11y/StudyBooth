@@ -50,3 +50,6 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+
+# Django Channels
+daphne.pid

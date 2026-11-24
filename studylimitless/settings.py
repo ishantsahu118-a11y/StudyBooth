@@ -11,26 +11,68 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
-import os
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# ------------------------------------------------------------------------------
+# Environment Configuration (django-environ)
+# ------------------------------------------------------------------------------
+env = environ.Env(
+    DEBUG=(bool, True),
+    ALLOWED_HOSTS=(list, ['localhost', '127.0.0.1', 'testserver']),
+    SECRET_KEY=(str, 'django-insecure-dev-key-change-in-production'),
+    DATABASE_URL=(str, 'sqlite:///db.sqlite3'),
+    REDIS_URL=(str, 'redis://localhost:6379/0'),
+    EMAIL_HOST=(str, ''),
+    EMAIL_PORT=(int, 587),
+    EMAIL_USE_TLS=(bool, True),
+    EMAIL_HOST_USER=(str, ''),
+    EMAIL_HOST_PASSWORD=(str, ''),
+    DEFAULT_FROM_EMAIL=(str, 'StudyLimitless <noreply@studylimitless.com>'),
+    GITHUB_CLIENT_ID=(str, ''),
+    GITHUB_CLIENT_SECRET=(str, ''),
+    GOOGLE_CLIENT_ID=(str, ''),
+    GOOGLE_CLIENT_SECRET=(str, ''),
+    CSRF_TRUSTED_ORIGINS=(list, []),
+    SECURE_SSL_REDIRECT=(bool, False),
+    SESSION_COOKIE_SECURE=(bool, False),
+    CSRF_COOKIE_SECURE=(bool, False),
+)
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
+# Read .env file if it exists
+environ.Env.read_env(BASE_DIR / '.env')
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-key-change-in-production')
+# ------------------------------------------------------------------------------
+# Security Settings
+# ------------------------------------------------------------------------------
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
+DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',')
+ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 
+# CSRF Trusted Origins (for HTTPS in production)
+CSRF_TRUSTED_ORIGINS = env('CSRF_TRUSTED_ORIGINS')
 
-# Application definition
+# Secure cookies and SSL redirect in production
+if not DEBUG:
+    SECURE_SSL_REDIRECT = env('SECURE_SSL_REDIRECT')
+    SESSION_COOKIE_SECURE = env('SESSION_COOKIE_SECURE')
+    CSRF_COOKIE_SECURE = env('CSRF_COOKIE_SECURE')
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+    X_FRAME_OPTIONS = 'DENY'
 
+# ------------------------------------------------------------------------------
+# Application Definition
+# ------------------------------------------------------------------------------
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -43,10 +85,15 @@ INSTALLED_APPS = [
     # Allauth
     'allauth',
     'allauth.account',
-    # 'allauth.socialaccount',
-    # 'allauth.socialaccount.providers.github',
-    # 'allauth.socialaccount.providers.google',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.github',
+    'allauth.socialaccount.providers.google',
 
+    # Third-party
+    'channels',
+    'whitenoise.runserver_nostatic',  # For runserver with WhiteNoise
+
+    # Local
     'base.apps.BaseConfig',
 ]
 
@@ -57,7 +104,9 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-# Allauth settings
+# ------------------------------------------------------------------------------
+# Allauth Settings
+# ------------------------------------------------------------------------------
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
@@ -67,26 +116,50 @@ ACCOUNT_LOGOUT_ON_GET = False
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 LOGIN_REDIRECT_URL = '/rooms/'
 ACCOUNT_ADAPTER = 'base.adapters.CustomAccountAdapter'
+
+# Rate limits on auth endpoints
 ACCOUNT_RATE_LIMITS = {
     'login_failed': '5/5m',
+    'signup': '3/5m',
+    'send_email': '2/5m',
 }
 
-# SOCIALACCOUNT_PROVIDERS = {
-#     'github': {
-#         'SCOPE': ['user:email', 'read:user'],
-#     },
-#     'google': {
-#         'SCOPE': ['profile', 'email'],
-#         'AUTH_PARAMS': {'access_type': 'online'},
-#     }
-# }
+# Social account providers
+SOCIALACCOUNT_PROVIDERS = {
+    'github': {
+        'SCOPE': ['user:email', 'read:user'],
+        'APP': {
+            'client_id': env('GITHUB_CLIENT_ID'),
+            'secret': env('GITHUB_CLIENT_SECRET'),
+        }
+    },
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'APP': {
+            'client_id': env('GOOGLE_CLIENT_ID'),
+            'secret': env('GOOGLE_CLIENT_SECRET'),
+        }
+    }
+}
 
-# Email backend (console for development)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'StudyLimitless <noreply@studylimitless.com>'
+# ------------------------------------------------------------------------------
+# Email Configuration
+# ------------------------------------------------------------------------------
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env('EMAIL_HOST')
+EMAIL_PORT = env('EMAIL_PORT')
+EMAIL_USE_TLS = env('EMAIL_USE_TLS')
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 
+# ------------------------------------------------------------------------------
+# Middleware
+# ------------------------------------------------------------------------------
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise for static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -114,59 +187,105 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'studylimitless.wsgi.application'
+ASGI_APPLICATION = 'studylimitless.asgi.application'
 
-
+# ------------------------------------------------------------------------------
 # Database
-# https://docs.djangoproject.com/en/6.1/ref/settings/#databases
-
+# ------------------------------------------------------------------------------
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': env.db('DATABASE_URL')
 }
 
+# Connection pooling and health checks for PostgreSQL
+if 'postgres' in env('DATABASE_URL'):
+    DATABASES['default']['CONN_MAX_AGE'] = 60
+    DATABASES['default']['CONN_HEALTH_CHECKS'] = True
 
-# Password validation
-# https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
-
+# ------------------------------------------------------------------------------
+# Password Validation
+# ------------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
+# ------------------------------------------------------------------------------
 # Internationalization
-# https://docs.djangoproject.com/en/6.1/topics/i18n/
-
+# ------------------------------------------------------------------------------
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.1/howto/static-files/
-
+# ------------------------------------------------------------------------------
+# Static Files (CSS, JavaScript, Images)
+# ------------------------------------------------------------------------------
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'base' / 'static',
 ]
-
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# WhiteNoise configuration
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_MANIFEST_STRICT = False
 
+# ------------------------------------------------------------------------------
+# Media Files (User Uploads)
+# ------------------------------------------------------------------------------
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
+# File upload validation
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5 MB
+FILE_UPLOAD_PERMISSIONS = 0o644
+
+# ------------------------------------------------------------------------------
+# Default Primary Key Field Type
+# ------------------------------------------------------------------------------
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ------------------------------------------------------------------------------
+# Django Channels (Real-time)
+# ------------------------------------------------------------------------------
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [env('REDIS_URL')],
+        },
+    },
+}
+
+# ------------------------------------------------------------------------------
+# Rate Limiting (django-ratelimit)
+# ------------------------------------------------------------------------------
+RATELIMIT_ENABLE = True
+RATELIMIT_USE_CACHE = 'default'
+
+# ------------------------------------------------------------------------------
+# Custom Settings
+# ------------------------------------------------------------------------------
+# Avatar upload settings
+AVATAR_MAX_SIZE = 2 * 1024 * 1024  # 2 MB
+AVATAR_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+# Room file sharing
+ROOM_FILE_MAX_SIZE = 10 * 1024 * 1024  # 10 MB
+ROOM_FILE_ALLOWED_TYPES = [
+    'application/pdf',
+    'text/plain',
+    'text/markdown',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+]
+
+# Profanity filter (basic list - extend as needed)
+PROFANITY_WORDS = [
+    # Add words here or load from file
+]
