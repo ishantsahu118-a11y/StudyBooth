@@ -1,0 +1,109 @@
+{% extends 'main.html' %}
+{% load i18n %}
+
+{% block title %}Verify Your Email - StudyLimitless{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-container {
+        min-height: calc(100vh - var(--header-height));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-8) var(--space-4);
+    }
+
+    .auth-card {
+        width: 100%;
+        max-width: 420px;
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-xl);
+        padding: var(--space-10);
+        text-align: center;
+    }
+
+    .auth-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto var(--space-6);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .auth-icon.pending {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
+    .auth-icon.success {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+
+    .auth-icon.error {
+        background-color: #fee2e2;
+        color: #dc2626;
+    }
+
+    .auth-icon svg {
+        width: 40px;
+        height: 40px;
+    }
+
+    .auth-card h1 {
+        font-size: var(--text-2xl);
+        font-weight: 700;
+        color: var(--color-text);
+        margin-bottom: var(--space-3);
+    }
+
+    .auth-card p {
+        color: var(--color-text-secondary);
+        line-height: 1.6;
+        margin-bottom: var(--space-2);
+    }
+
+    .auth-actions {
+        margin-top: var(--space-8);
+    }
+
+    .btn-primary {
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        {% if email_verified %}
+        <div class="auth-icon success">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+        </div>
+        <h1>Email verified!</h1>
+        <p>Your email has been successfully verified. You can now sign in to your account.</p>
+        {% else %}
+        <div class="auth-icon pending">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 6v6l4 2"></path>
+            </svg>
+        </div>
+        <h1>Verify your email</h1>
+        <p>We've sent a verification email to <strong>{{ email }}</strong></p>
+        <p>Please check your inbox (and spam folder) and click the link to verify your email address.</p>
+        <p>The link will expire in 24 hours.</p>
+        {% endif %}
+
+        <div class="auth-actions">
+            <a href="{% url 'account_login' %}" class="btn btn-primary">Sign In</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

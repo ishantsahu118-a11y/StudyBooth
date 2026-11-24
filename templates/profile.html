@@ -1,0 +1,910 @@
+{% extends 'main.html' %}
+
+{% block title %}{{ profile_user.username }}'s Profile - StudyLimitless{% endblock %}
+
+{% block meta_description %}{{ profile.bio|default:"StudyLimitless user profile"|truncatewords:30 }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Profile Page Styles */
+    .profile-header {
+        padding: var(--space-10) var(--space-4);
+        background-color: var(--color-bg-secondary);
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .profile-header-content {
+        max-width: var(--container-max);
+        margin: 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: var(--space-6);
+    }
+
+    .profile-main-info {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-6);
+    }
+
+    .profile-avatar-large {
+        width: 120px;
+        height: 120px;
+        border-radius: var(--radius-xl);
+        background: linear-gradient(135deg, var(--color-primary), #a855f7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: var(--text-4xl);
+        font-weight: 700;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .profile-avatar-large img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .profile-name-section {
+        min-width: 200px;
+    }
+
+    .profile-username {
+        font-size: var(--text-3xl);
+        font-weight: 700;
+        color: var(--color-text);
+        margin-bottom: var(--space-1);
+    }
+
+    .profile-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-full);
+        font-size: var(--text-xs);
+        font-weight: 500;
+    }
+
+    .badge-primary { background-color: var(--color-primary-light); color: var(--color-primary); }
+    .badge-success { background-color: #d1fae5; color: #065f46; }
+    .badge-warning { background-color: #fef3c7; color: #92400e; }
+    .badge-info { background-color: #dbeafe; color: #1e40af; }
+
+    .profile-bio {
+        color: var(--color-text-secondary);
+        font-size: var(--text-base);
+        line-height: 1.6;
+        max-width: 500px;
+        margin-top: var(--space-4);
+    }
+
+    .profile-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+    }
+
+    .profile-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: var(--space-6);
+        max-width: var(--container-max);
+        margin: var(--space-8) auto 0;
+        padding: var(--space-6) var(--space-4);
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-xl);
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: var(--text-3xl);
+        font-weight: 700;
+        color: var(--color-primary);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: var(--text-sm);
+        color: var(--color-text-secondary);
+        margin-top: var(--space-1);
+    }
+
+    .profile-main {
+        padding: var(--space-8) var(--space-4);
+        max-width: var(--container-max);
+        margin: 0 auto;
+    }
+
+    .profile-grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: var(--space-8);
+    }
+
+    @media (max-width: 1024px) {
+        .profile-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .profile-section {
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-xl);
+        overflow: hidden;
+    }
+
+    .section-header {
+        padding: var(--space-6);
+        border-bottom: 1px solid var(--color-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .section-header h2 {
+        font-size: var(--text-xl);
+        font-weight: 600;
+    }
+
+    .section-content {
+        padding: var(--space-6);
+    }
+
+    /* Created Rooms */
+    .rooms-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+    }
+
+    .room-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        padding: var(--space-4);
+        background-color: var(--color-bg-secondary);
+        border-radius: var(--radius-lg);
+        transition: all var(--transition-fast);
+    }
+
+    .room-item:hover {
+        background-color: var(--color-bg-tertiary);
+    }
+
+    .room-item-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .room-item-name {
+        font-weight: 600;
+        color: var(--color-text);
+        margin-bottom: var(--space-1);
+    }
+
+    .room-item-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+        font-size: var(--text-sm);
+        color: var(--color-text-secondary);
+    }
+
+    .room-item-meta span {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+    }
+
+    .room-item-status {
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-full);
+        font-size: var(--text-xs);
+        font-weight: 600;
+    }
+
+    .room-item-status.active { background-color: #d1fae5; color: #065f46; }
+    .room-item-status.scheduled { background-color: #fef3c7; color: #92400e; }
+
+    /* Sessions */
+    .sessions-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    .session-item {
+        padding: var(--space-4);
+        background-color: var(--color-bg-secondary);
+        border-radius: var(--radius-lg);
+    }
+
+    .session-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-2);
+    }
+
+    .session-room {
+        font-weight: 600;
+        color: var(--color-text);
+    }
+
+    .session-date {
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+    }
+
+    .session-stats {
+        display: flex;
+        gap: var(--space-4);
+        font-size: var(--text-sm);
+        color: var(--color-text-secondary);
+    }
+
+    .session-stat {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+    }
+
+    /* Sidebar */
+    .profile-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-6);
+    }
+
+    .sidebar-card {
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-xl);
+        overflow: hidden;
+    }
+
+    .sidebar-card .section-header {
+        padding: var(--space-4) var(--space-6);
+    }
+
+    .sidebar-card .section-content {
+        padding: var(--space-4) var(--space-6) var(--space-6);
+    }
+
+    /* About */
+    .about-item {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+        padding: var(--space-3) 0;
+    }
+
+    .about-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-md);
+        background-color: var(--color-primary-light);
+        color: var(--color-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .about-content {
+        flex: 1;
+    }
+
+    .about-label {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: var(--space-1);
+    }
+
+    .about-value {
+        color: var(--color-text);
+    }
+
+    /* Goals Progress */
+    .goal-item {
+        margin-bottom: var(--space-4);
+    }
+
+    .goal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-2);
+    }
+
+    .goal-label {
+        font-size: var(--text-sm);
+        font-weight: 500;
+        color: var(--color-text);
+    }
+
+    .goal-value {
+        font-size: var(--text-sm);
+        color: var(--color-text-secondary);
+    }
+
+    .goal-bar {
+        height: 8px;
+        background-color: var(--color-bg-tertiary);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+    }
+
+    .goal-progress {
+        height: 100%;
+        background: linear-gradient(90deg, var(--color-primary), #a855f7);
+        border-radius: var(--radius-full);
+        transition: width var(--transition-normal);
+    }
+
+    /* Streak */
+    .streak-display {
+        text-align: center;
+        padding: var(--space-4) 0;
+    }
+
+    .streak-number {
+        font-size: var(--text-5xl);
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--color-primary), #a855f7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1;
+    }
+
+    .streak-label {
+        font-size: var(--text-lg);
+        color: var(--color-text-secondary);
+        margin-top: var(--space-2);
+    }
+
+    .streak-best {
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
+        margin-top: var(--space-1);
+    }
+
+    /* Activity Heatmap (simplified) */
+    .heatmap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        justify-content: center;
+    }
+
+    .heatmap-day {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+        background-color: var(--color-bg-tertiary);
+    }
+
+    .heatmap-day.active-1 { background-color: #c6f6d5; }
+    .heatmap-day.active-2 { background-color: #9ae6b4; }
+    .heatmap-day.active-3 { background-color: #68d391; }
+    .heatmap-day.active-4 { background-color: #48bb78; }
+    .heatmap-day.active-5 { background-color: #38a169; }
+
+    .heatmap-legend {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+        margin-top: var(--space-4);
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+    }
+
+    .heatmap-legend span {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+    }
+
+    .heatmap-legend .heatmap-day {
+        width: 14px;
+        height: 14px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: var(--space-10);
+        color: var(--color-text-muted);
+    }
+
+    .empty-state svg {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto var(--space-4);
+        opacity: 0.5;
+    }
+
+    @media (max-width: 640px) {
+        .profile-header-content {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .profile-main-info {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .profile-bio {
+            max-width: 100%;
+        }
+
+        .profile-actions {
+            justify-content: center;
+        }
+
+        .profile-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-header">
+    <div class="profile-header-content">
+        <div class="profile-main-info">
+            <div class="profile-avatar-large">
+                {% if profile.avatar %}
+                <img src="{{ profile.avatar.url }}" alt="{{ profile_user.username }}">
+                {% else %}
+                {{ profile_user.username|first|upper }}
+                {% endif %}
+            </div>
+            <div class="profile-name-section">
+                <h1 class="profile-username">{{ profile_user.username }}</h1>
+                <div class="profile-badges">
+                    <span class="badge badge-primary">Member since {{ profile_user.date_joined|date:"M Y" }}</span>
+                    {% if profile.current_streak > 0 %}
+                    <span class="badge badge-success">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                            <path d="M2 17l10 5 10-5"></path>
+                            <path d="M2 12l10 5 10-5"></path>
+                        </svg>
+                        {{ profile.current_streak }} day streak
+                    </span>
+                    {% endif %}
+                    {% if profile.total_sessions > 0 %}
+                    <span class="badge badge-info">{{ profile.total_sessions }} sessions</span>
+                    {% endif %}
+                </div>
+                {% if profile.bio %}
+                <p class="profile-bio">{{ profile.bio }}</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="profile-actions">
+            {% if is_own_profile %}
+            <a href="#" class="btn btn-primary">Edit Profile</a>
+            <a href="#" class="btn btn-secondary">Settings</a>
+            {% else %}
+            {% if not is_following %}
+            <button class="btn btn-primary" id="followBtn" data-username="{{ profile_user.username }}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <line x1="19" y1="8" x2="19" y2="14"></line>
+                </svg>
+                Follow
+            </button>
+            {% else %}
+            <button class="btn btn-secondary" id="followBtn" data-username="{{ profile_user.username }}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <line x1="19" y1="8" x2="19" y2="14"></line>
+                </svg>
+                Following
+            </button>
+            {% endif %}
+            <a href="#" class="btn btn-ghost">Message</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="profile-stats">
+        <div class="stat-item">
+            <div class="stat-value">{{ profile.total_focus_minutes|divisibleby:60|yesno:profile.total_focus_minutes|div:60,profile.total_focus_minutes }}h</div>
+            <div class="stat-label">Total Focus Time</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ profile.total_sessions }}</div>
+            <div class="stat-label">Sessions Completed</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ profile.current_streak }}</div>
+            <div class="stat-label">Current Streak</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ profile.longest_streak }}</div>
+            <div class="stat-label">Longest Streak</div>
+        </div>
+    </div>
+</div>
+
+<div class="profile-main">
+    <div class="profile-grid">
+        <!-- Main Content -->
+        <div class="profile-content">
+            <!-- Created Rooms -->
+            <section class="profile-section" aria-labelledby="rooms-title">
+                <header class="section-header">
+                    <h2 id="rooms-title">Created Rooms</h2>
+                    {% if is_own_profile %}
+                    <a href="{% url 'Create Room' %}" class="btn btn-sm btn-primary">Create Room</a>
+                    {% endif %}
+                </header>
+                <div class="section-content">
+                    {% if created_rooms %}
+                    <div class="rooms-list">
+                        {% for room in created_rooms %}
+                        <a href="{% url 'Room Detail' room.id %}" class="room-item" style="text-decoration: none; color: inherit;">
+                            <div class="room-item-info">
+                                <div class="room-item-name">{{ room.name }}</div>
+                                <div class="room-item-meta">
+                                    <span>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="9" cy="7" r="4"></circle>
+                                        </svg>
+                                        {{ room.current_participants }}/{{ room.max_participants }}
+                                    </span>
+                                    <span>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <path d="M12 6v6l4 2"></path>
+                                        </svg>
+                                        {{ room.focus_duration }}min
+                                    </span>
+                                    {% if room.topic %}
+                                    <span style="color: {{ room.topic.color }};">● {{ room.topic.name }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <span class="room-item-status {{ room.status }}">{{ room.get_status_display }}</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        </svg>
+                        <h3>No rooms created yet</h3>
+                        <p>{% if is_own_profile %}Create your first study room to get started{% else %}This user hasn't created any rooms yet{% endif %}</p>
+                        {% if is_own_profile %}
+                        <a href="{% url 'Create Room' %}" class="btn btn-primary" style="margin-top: var(--space-4);">Create Room</a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <!-- Recent Sessions -->
+            <section class="profile-section" aria-labelledby="sessions-title" style="margin-top: var(--space-6);">
+                <header class="section-header">
+                    <h2 id="sessions-title">Recent Study Sessions</h2>
+                </header>
+                <div class="section-content">
+                    {% if recent_sessions %}
+                    <div class="sessions-list">
+                        {% for session in recent_sessions %}
+                        <div class="session-item">
+                            <div class="session-header">
+                                <span class="session-room">{{ session.room.name }}</span>
+                                <span class="session-date">{{ session.started_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                            <div class="session-stats">
+                                <span class="session-stat">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <path d="M12 6v6l4 2"></path>
+                                    </svg>
+                                    {{ session.actual_focus_minutes }} min focus
+                                </span>
+                                <span class="session-stat">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="16 18 22 12 16 6"></polyline>
+                                        <polyline points="8 6 2 12 8 18"></polyline>
+                                    </svg>
+                                    {{ session.cycles_completed }} cycles
+                                </span>
+                                <span class="session-stat">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                    </svg>
+                                    {{ session.duration_minutes }} min total
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 6v6l4 2"></path>
+                        </svg>
+                        <h3>No completed sessions</h3>
+                        <p>{% if is_own_profile %}Join a room and start your first session{% else %}This user hasn't completed any sessions yet{% endif %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="profile-sidebar" aria-label="Profile sidebar">
+            <!-- About -->
+            <section class="sidebar-card" aria-labelledby="about-title">
+                <header class="section-header">
+                    <h3 id="about-title">About</h3>
+                </header>
+                <div class="section-content">
+                    <div class="about-item">
+                        <div class="about-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                        </div>
+                        <div class="about-content">
+                            <div class="about-label">Timezone</div>
+                            <div class="about-value">{{ profile.timezone }}</div>
+                        </div>
+                    </div>
+                    <div class="about-item">
+                        <div class="about-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 6v6l4 2"></path>
+                            </svg>
+                        </div>
+                        <div class="about-content">
+                            <div class="about-label">Daily Focus Goal</div>
+                            <div class="about-value">{{ profile.daily_focus_goal }} minutes</div>
+                        </div>
+                    </div>
+                    <div class="about-item">
+                        <div class="about-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                        </div>
+                        <div class="about-content">
+                            <div class="about-label">Preferred Session</div>
+                            <div class="about-value">{{ profile.preferred_focus_duration }}min / {{ profile.preferred_break_duration }}min</div>
+                        </div>
+                    </div>
+                    <div class="about-item">
+                        <div class="about-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                        </div>
+                        <div class="about-content">
+                            <div class="about-label">Theme</div>
+                            <div class="about-value">{{ profile.get_theme_display }}</div>
+                        </div>
+                    </div>
+                    {% if profile.preferred_topics.exists %}
+                    <div class="about-item">
+                        <div class="about-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                        </div>
+                        <div class="about-content">
+                            <div class="about-label">Interests</div>
+                            <div class="about-value">
+                                {% for topic in profile.preferred_topics.all %}
+                                <span class="tag" style="background-color: {{ topic.color }}20; color: {{ topic.color }};">{{ topic.name }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <!-- Streak & Goals -->
+            <section class="sidebar-card" aria-labelledby="goals-title">
+                <header class="section-header">
+                    <h3 id="goals-title">Progress</h3>
+                </header>
+                <div class="section-content">
+                    <!-- Streak -->
+                    <div class="streak-display">
+                        <div class="streak-number">{{ profile.current_streak }}</div>
+                        <div class="streak-label">Day Streak</div>
+                        <div class="streak-best">Best: {{ profile.longest_streak }} days</div>
+                    </div>
+
+                    <!-- Goals Progress -->
+                    <div style="border-top: 1px solid var(--color-border); padding-top: var(--space-6); margin-top: var(--space-6);">
+                        <h4 style="font-size: var(--text-sm); font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-4);">Goals</h4>
+                        <div class="goal-item">
+                            <div class="goal-header">
+                                <span class="goal-label">Daily Focus</span>
+                                <span class="goal-value">{{ profile.total_focus_minutes|divisibleby:60|yesno:profile.total_focus_minutes|div:60,profile.total_focus_minutes }}h / {{ profile.daily_focus_goal|divisibleby:60|yesno:profile.daily_focus_goal|div:60,profile.daily_focus_goal }}h</span>
+                            </div>
+                            <div class="goal-bar">
+                                <div class="goal-progress" style="width: {{ profile.total_focus_minutes|div:profile.daily_focus_goal|mul:100|floatformat:0|default:0 }}%;"></div>
+                            </div>
+                        </div>
+                        <div class="goal-item">
+                            <div class="goal-header">
+                                <span class="goal-label">Sessions This Week</span>
+                                <span class="goal-value">{{ profile.total_sessions }} / 7</span>
+                            </div>
+                            <div class="goal-bar">
+                                <div class="goal-progress" style="width: {{ profile.total_sessions|div:7|mul:100|floatformat:0|default:0 }}%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Activity Heatmap -->
+            <section class="sidebar-card" aria-labelledby="activity-title">
+                <header class="section-header">
+                    <h3 id="activity-title">Activity</h3>
+                </header>
+                <div class="section-content">
+                    <div class="heatmap" id="activityHeatmap">
+                        <!-- Generated by JS -->
+                    </div>
+                    <div class="heatmap-legend">
+                        <span>Less</span>
+                        <span class="heatmap-day active-1"></span>
+                        <span class="heatmap-day active-3"></span>
+                        <span class="heatmap-day active-5"></span>
+                        <span>More</span>
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Follow button
+        const followBtn = document.getElementById('followBtn');
+        if (followBtn) {
+            followBtn.addEventListener('click', function() {
+                const username = this.dataset.username;
+                const isFollowing = this.classList.contains('following') || this.textContent.includes('Following');
+
+                fetch(`/follow/${username}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.following) {
+                            this.classList.add('following');
+                            this.classList.remove('btn-secondary');
+                            this.classList.add('btn-primary');
+                            this.innerHTML = `
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <line x1="19" y1="8" x2="19" y2="14"></line>
+                                </svg>
+                                Following
+                            `;
+                            showToast('Now following ' + username, 'success');
+                        } else {
+                            this.classList.remove('following');
+                            this.classList.add('btn-secondary');
+                            this.classList.remove('btn-primary');
+                            this.innerHTML = `
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <line x1="19" y1="8" x2="19" y2="14"></line>
+                                </svg>
+                                Follow
+                            `;
+                            showToast('Unfollowed ' + username, 'info');
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast('Something went wrong', 'error');
+                });
+            });
+        }
+
+        // Activity heatmap generation (mock data)
+        function generateHeatmap() {
+            const heatmap = document.getElementById('activityHeatmap');
+            if (!heatmap) return;
+
+            const daysInYear = 365;
+            const today = new Date();
+            const startDate = new Date(today);
+            startDate.setDate(today.getDate() - daysInYear + 1);
+
+            for (let i = 0; i < daysInYear; i++) {
+                const day = document.createElement('div');
+                day.className = 'heatmap-day';
+
+                // Mock: random activity level 0-5
+                const activityLevel = Math.random() > 0.7 ? Math.floor(Math.random() * 5) + 1 : 0;
+                if (activityLevel > 0) {
+                    day.classList.add('active-' + activityLevel);
+                }
+
+                heatmap.appendChild(day);
+            }
+        }
+
+        generateHeatmap();
+
+        // CSRF helper
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %}

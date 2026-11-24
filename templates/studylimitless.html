@@ -1,0 +1,734 @@
+{% extends 'main.html' %}
+
+{% block title %}StudyLimitless - Study Rooms{% endblock %}
+
+{% block meta_description %}Browse and join virtual study rooms. Filter by topic, status, and room type.{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Study Rooms Page Styles */
+    .rooms-hero {
+        padding: var(--space-12) var(--space-4);
+        background: linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg) 100%);
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .rooms-hero-content {
+        max-width: var(--container-max);
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .rooms-hero h1 {
+        font-size: clamp(var(--text-3xl), 4vw, var(--text-4xl));
+        font-weight: 700;
+        color: var(--color-text);
+        margin-bottom: var(--space-3);
+    }
+
+    .rooms-hero p {
+        font-size: var(--text-lg);
+        color: var(--color-text-secondary);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .rooms-main {
+        padding: var(--space-8) var(--space-4);
+        max-width: var(--container-max);
+        margin: 0 auto;
+    }
+
+    .rooms-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: var(--space-8);
+    }
+
+    @media (max-width: 1024px) {
+        .rooms-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Sidebar Filters */
+    .filters-sidebar {
+        position: sticky;
+        top: calc(var(--header-height) + var(--space-4));
+        height: fit-content;
+    }
+
+    .filter-card {
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+    }
+
+    .filter-section {
+        margin-bottom: var(--space-6);
+    }
+
+    .filter-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .filter-label {
+        display: block;
+        font-size: var(--text-sm);
+        font-weight: 600;
+        color: var(--color-text);
+        margin-bottom: var(--space-3);
+    }
+
+    .filter-options {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .filter-option {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        font-size: var(--text-sm);
+        color: var(--color-text-secondary);
+    }
+
+    .filter-option:hover {
+        background-color: var(--color-bg-tertiary);
+        color: var(--color-text);
+    }
+
+    .filter-option input[type="radio"],
+    .filter-option input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--color-primary);
+        flex-shrink: 0;
+    }
+
+    .filter-option.active {
+        background-color: var(--color-primary-light);
+        color: var(--color-primary);
+    }
+
+    .filter-count {
+        margin-left: auto;
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        background-color: var(--color-bg-tertiary);
+        padding: 1px var(--space-2);
+        border-radius: var(--radius-full);
+    }
+
+    .filter-option.active .filter-count {
+        background-color: var(--color-primary);
+        color: white;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: var(--space-2) var(--space-3);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        font-size: var(--text-sm);
+        background-color: var(--color-surface);
+        color: var(--color-text);
+        transition: all var(--transition-fast);
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+    }
+
+    .filter-divider {
+        height: 1px;
+        background-color: var(--color-border);
+        margin: var(--space-4) 0;
+    }
+
+    .clear-filters-btn {
+        width: 100%;
+        padding: var(--space-2);
+        font-size: var(--text-sm);
+        color: var(--color-text-secondary);
+        background: none;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        transition: all var(--transition-fast);
+    }
+
+    .clear-filters-btn:hover {
+        color: var(--color-danger);
+        border-color: var(--color-danger);
+    }
+
+    /* Main Content */
+    .rooms-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: var(--space-4);
+        margin-bottom: var(--space-6);
+    }
+
+    .rooms-header h2 {
+        font-size: var(--text-2xl);
+        font-weight: 600;
+    }
+
+    .rooms-count {
+        font-size: var(--text-sm);
+        color: var(--color-text-secondary);
+    }
+
+    .rooms-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: var(--space-6);
+    }
+
+    @media (max-width: 640px) {
+        .rooms-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .room-card {
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+        transition: all var(--transition-normal);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .room-card:hover {
+        border-color: var(--color-primary);
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+    }
+
+    .room-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-3);
+        margin-bottom: var(--space-3);
+    }
+
+    .room-name {
+        font-size: var(--text-lg);
+        font-weight: 600;
+        color: var(--color-text);
+        flex: 1;
+    }
+
+    .room-status {
+        flex-shrink: 0;
+    }
+
+    .room-status-badge {
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-full);
+        font-size: var(--text-xs);
+        font-weight: 600;
+    }
+
+    .room-status-active { background-color: #d1fae5; color: #065f46; }
+    .room-status-scheduled { background-color: #fef3c7; color: #92400e; }
+    .room-status-ended { background-color: #f3f4f6; color: #374151; }
+
+    .room-description {
+        color: var(--color-text-secondary);
+        font-size: var(--text-sm);
+        line-height: 1.6;
+        margin-bottom: var(--space-4);
+        flex: 1;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .room-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-4);
+        padding-top: var(--space-4);
+        border-top: 1px solid var(--color-border);
+    }
+
+    .room-topic {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+    }
+
+    .topic-label {
+        font-size: var(--text-xs);
+        font-weight: 500;
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .topic-value {
+        font-size: var(--text-sm);
+        font-weight: 500;
+        color: var(--color-text);
+    }
+
+    .topic-color-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .room-participants {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        font-size: var(--text-sm);
+        color: var(--color-text-secondary);
+    }
+
+    .participant-count {
+        font-weight: 600;
+        color: var(--color-text);
+    }
+
+    .participant-max {
+        color: var(--color-text-muted);
+    }
+
+    .participant-icon {
+        width: 18px;
+        height: 18px;
+        color: var(--color-primary);
+        flex-shrink: 0;
+    }
+
+    .room-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        margin-bottom: var(--space-4);
+    }
+
+    .room-tag {
+        padding: var(--space-1) var(--space-2);
+        font-size: var(--text-xs);
+        font-weight: 500;
+        border-radius: var(--radius-full);
+    }
+
+    .room-tag-primary { background-color: var(--color-primary-light); color: var(--color-primary); }
+    .room-tag-success { background-color: #d1fae5; color: #065f46; }
+    .room-tag-warning { background-color: #fef3c7; color: #92400e; }
+    .room-tag-info { background-color: #dbeafe; color: #1e40af; }
+
+    .btn-join-room {
+        width: 100%;
+        padding: var(--space-3);
+        font-weight: 600;
+    }
+
+    .btn-join-room:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    /* Empty State */
+    .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: var(--space-16) var(--space-4);
+        color: var(--color-text-muted);
+    }
+
+    .empty-state svg {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto var(--space-4);
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        font-size: var(--text-xl);
+        font-weight: 600;
+        color: var(--color-text);
+        margin-bottom: var(--space-2);
+    }
+
+    .empty-state p {
+        margin-bottom: var(--space-6);
+    }
+
+    /* Features Section */
+    .features-section {
+        padding: var(--space-16) var(--space-4);
+        background-color: var(--color-bg-secondary);
+        margin-top: var(--space-16);
+    }
+
+    .features-section > .container > h3 {
+        text-align: center;
+        font-size: var(--text-2xl);
+        font-weight: 600;
+        margin-bottom: var(--space-10);
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: var(--space-6);
+        max-width: var(--container-max);
+        margin: 0 auto;
+    }
+
+    .feature-card {
+        text-align: center;
+        padding: var(--space-8);
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-xl);
+        transition: all var(--transition-normal);
+    }
+
+    .feature-card:hover {
+        border-color: var(--color-primary);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .feature-icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto var(--space-4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--color-primary-light);
+        border-radius: var(--radius-lg);
+        color: var(--color-primary);
+    }
+
+    .feature-icon svg {
+        width: 28px;
+        height: 28px;
+    }
+
+    .feature-card h4 {
+        font-size: var(--text-lg);
+        font-weight: 600;
+        margin-bottom: var(--space-2);
+    }
+
+    .feature-card p {
+        color: var(--color-text-secondary);
+        font-size: var(--text-sm);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="rooms-hero" aria-labelledby="rooms-hero-title">
+    <div class="rooms-hero-content">
+        <h1 id="rooms-hero-title">Study Rooms</h1>
+        <p>Find your perfect study environment. Join active sessions or schedule your own.</p>
+    </div>
+</section>
+
+<!-- Main Content -->
+<main class="rooms-main" role="main">
+    <div class="rooms-layout">
+        <!-- Sidebar Filters -->
+        <aside class="filters-sidebar" aria-label="Room filters">
+            <div class="filter-card">
+                <!-- Search -->
+                <div class="filter-section">
+                    <label class="filter-label">Search Rooms</label>
+                    <form method="GET" action="{% url 'Study Rooms' %}">
+                        <input type="search" name="q" class="search-input" placeholder="Search by name, topic..." value="{{ query|default:'' }}" aria-label="Search rooms">
+                        {% if current_topic %}
+                        <input type="hidden" name="topic" value="{{ current_topic }}">
+                        {% endif %}
+                        {% if current_status %}
+                        <input type="hidden" name="status" value="{{ current_status }}">
+                        {% endif %}
+                        {% if current_type %}
+                        <input type="hidden" name="type" value="{{ current_type }}">
+                        {% endif %}
+                    </form>
+                </div>
+
+                <div class="filter-divider"></div>
+
+                <!-- Topic Filter -->
+                <div class="filter-section">
+                    <span class="filter-label">Topic</span>
+                    <div class="filter-options">
+                        <label class="filter-option {% if not current_topic %}active{% endif %}">
+                            <input type="radio" name="topic" value="" {% if not current_topic %}checked{% endif %} onchange="this.form.submit()">
+                            <span>All Topics</span>
+                            <span class="filter-count">{{ rooms|length }}</span>
+                        </label>
+                        {% for topic in topics %}
+                        <label class="filter-option {% if current_topic == topic.slug %}active{% endif %}" style="{% if topic.color %}--topic-color: {{ topic.color }}{% endif %}">
+                            <input type="radio" name="topic" value="{{ topic.slug }}" {% if current_topic == topic.slug %}checked{% endif %} onchange="this.form.submit()">
+                            {% if topic.color %}
+                            <span class="topic-color-dot" style="background-color: {{ topic.color }}"></span>
+                            {% endif %}
+                            <span>{{ topic.name }}</span>
+                            <span class="filter-count">{{ topic.rooms.count }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="filter-divider"></div>
+
+                <!-- Status Filter -->
+                <div class="filter-section">
+                    <span class="filter-label">Status</span>
+                    <div class="filter-options">
+                        <label class="filter-option {% if not current_status %}active{% endif %}">
+                            <input type="radio" name="status" value="" {% if not current_status %}checked{% endif %} onchange="this.form.submit()">
+                            <span>All Status</span>
+                        </label>
+                        <label class="filter-option {% if current_status == 'active' %}active{% endif %}">
+                            <input type="radio" name="status" value="active" {% if current_status == 'active' %}checked{% endif %} onchange="this.form.submit()">
+                            <span class="room-status-badge room-status-active">Active</span>
+                        </label>
+                        <label class="filter-option {% if current_status == 'scheduled' %}active{% endif %}">
+                            <input type="radio" name="status" value="scheduled" {% if current_status == 'scheduled' %}checked{% endif %} onchange="this.form.submit()">
+                            <span class="room-status-badge room-status-scheduled">Scheduled</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="filter-divider"></div>
+
+                <!-- Room Type Filter -->
+                <div class="filter-section">
+                    <span class="filter-label">Room Type</span>
+                    <div class="filter-options">
+                        <label class="filter-option {% if not current_type %}active{% endif %}">
+                            <input type="radio" name="type" value="" {% if not current_type %}checked{% endif %} onchange="this.form.submit()">
+                            <span>All Types</span>
+                        </label>
+                        <label class="filter-option {% if current_type == 'pomodoro' %}active{% endif %}">
+                            <input type="radio" name="type" value="pomodoro" {% if current_type == 'pomodoro' %}checked{% endif %} onchange="this.form.submit()">
+                            <span>Pomodoro</span>
+                        </label>
+                        <label class="filter-option {% if current_type == 'custom_timer' %}active{% endif %}">
+                            <input type="radio" name="type" value="custom_timer" {% if current_type == 'custom_timer' %}checked{% endif %} onchange="this.form.submit()">
+                            <span>Custom Timer</span>
+                        </label>
+                        <label class="filter-option {% if current_type == 'open' %}active{% endif %}">
+                            <input type="radio" name="type" value="open" {% if current_type == 'open' %}checked{% endif %} onchange="this.form.submit()">
+                            <span>Open Session</span>
+                        </label>
+                        <label class="filter-option {% if current_type == 'structured' %}active{% endif %}">
+                            <input type="radio" name="type" value="structured" {% if current_type == 'structured' %}checked{% endif %} onchange="this.form.submit()">
+                            <span>Structured</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="filter-divider"></div>
+
+                <!-- Clear Filters -->
+                <button type="button" class="clear-filters-btn" id="clearFiltersBtn">
+                    Clear All Filters
+                </button>
+            </div>
+        </aside>
+
+        <!-- Rooms Grid -->
+        <section class="rooms-content" aria-labelledby="rooms-list-title">
+            <header class="rooms-header">
+                <h2 id="rooms-list-title">Available Rooms</h2>
+                <div class="rooms-count">
+                    {% if rooms %}
+                    {{ rooms|length }} room{{ rooms|length|pluralize }} found
+                    {% else %}
+                    No rooms found
+                    {% endif %}
+                </div>
+            </header>
+
+            {% if rooms %}
+            <div class="rooms-grid" id="roomsGrid">
+                {% for room in rooms %}
+                <article class="room-card" data-room-id="{{ room.id }}">
+                    <div class="room-header">
+                        <h3 class="room-name">{{ room.name }}</h3>
+                        <span class="room-status-badge room-status-{{ room.status }}">{{ room.get_status_display }}</span>
+                    </div>
+                    {% if room.description %}
+                    <p class="room-description">{{ room.description|truncatewords:25 }}</p>
+                    {% endif %}
+                    <div class="room-meta">
+                        <div class="room-topic">
+                            {% if room.topic %}
+                            <span class="topic-color-dot" style="background-color: {{ room.topic.color|default:'#6366f1' }}"></span>
+                            <span class="topic-label">Focus:</span>
+                            <span class="topic-value">{{ room.topic.name }}</span>
+                            {% else %}
+                            <span class="topic-label">Focus:</span>
+                            <span class="topic-value">General</span>
+                            {% endif %}
+                        </div>
+                        <div class="room-participants">
+                            <span class="participant-count">{{ room.current_participants }}</span>
+                            <span class="participant-max">/ {{ room.max_participants }}</span>
+                            <svg class="participant-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="room-tags">
+                        <span class="room-tag room-tag-primary">{{ room.get_room_type_display }}</span>
+                        {% if room.enable_video %}<span class="room-tag room-tag-info">Video</span>{% endif %}
+                        {% if room.enable_voice %}<span class="room-tag room-tag-success">Voice</span>{% endif %}
+                        {% if room.enable_chat %}<span class="room-tag room-tag-primary">Chat</span>{% endif %}
+                        {% if room.enable_screen_share %}<span class="room-tag room-tag-warning">Screen Share</span>{% endif %}
+                        {% if room.is_private %}<span class="room-tag" style="background-color: #fce7f3; color: #be185d;">Private</span>{% endif %}
+                    </div>
+                    {% if room.status == 'active' and not room.is_full %}
+                    <a href="{% url 'Room Detail' room.id %}" class="btn btn-primary btn-join-room">Join Room</a>
+                    {% elif room.status == 'scheduled' %}
+                    <a href="{% url 'Room Detail' room.id %}" class="btn btn-secondary btn-join-room">View Details</a>
+                    {% else %}
+                    <button class="btn btn-secondary btn-join-room" disabled>Room {{ room.get_status_display }}</button>
+                    {% endif %}
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                </svg>
+                <h3>No rooms found</h3>
+                <p>Try adjusting your filters or search terms</p>
+                <button type="button" class="btn btn-secondary" id="clearFiltersBtn2">Clear Filters</button>
+            </div>
+            {% endif %}
+        </section>
+    </div>
+</main>
+
+<!-- Features Section -->
+<section class="features-section" aria-labelledby="features-title">
+    <div class="container">
+        <h3 id="features-title">Why StudyLimitless?</h3>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polygon points="10 8 16 12 10 16 10 8"></polygon>
+                    </svg>
+                </div>
+                <h4>Real-time Collaboration</h4>
+                <p>Study with others in real-time using video, voice, and chat.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                </div>
+                <h4>Pomodoro Timer</h4>
+                <p>Built-in focus timers with customizable intervals and breaks.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </div>
+                <h4>Shared Resources</h4>
+                <p>Share notes, documents, and links with your study group.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <h4>Community</h4>
+                <p>Connect with motivated learners worldwide and build study habits together.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Clear filters
+        function clearFilters() {
+            const url = new URL(window.location.href);
+            url.search = '';
+            window.location.href = url.toString();
+        }
+
+        document.getElementById('clearFiltersBtn')?.addEventListener('click', clearFilters);
+        document.getElementById('clearFiltersBtn2')?.addEventListener('click', clearFilters);
+
+        // Make filter options submit form on click (for radios)
+        document.querySelectorAll('.filter-option input[type="radio"]').forEach(input => {
+            input.addEventListener('change', function() {
+                this.closest('form').submit();
+            });
+        });
+
+        // Keyboard navigation for room cards
+        document.querySelectorAll('.room-card').forEach(card => {
+            card.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    const link = this.querySelector('a.btn-join-room');
+                    if (link) {
+                        e.preventDefault();
+                        link.click();
+                    }
+                }
+            });
+            card.setAttribute('tabindex', '0');
+        });
+
+        // Highlight active filter options
+        document.querySelectorAll('.filter-option').forEach(option => {
+            const input = option.querySelector('input');
+            if (input && input.checked) {
+                option.classList.add('active');
+            }
+        });
+    });
+</script>
+{% endblock %}

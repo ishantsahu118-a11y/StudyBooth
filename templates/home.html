@@ -1,0 +1,218 @@
+{% extends 'main.html' %}
+{% load static %}
+
+{% block title %}StudyLimitless - Study Together, Grow Together{% endblock %}
+
+{% block meta_description %}Join virtual study rooms, use Pomodoro timers, and connect with a global community of learners. Study together, achieve more.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/pages/home.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero" aria-labelledby="hero-title">
+    <div class="hero-content">
+        <div class="hero-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <span>New: AI-powered focus sessions now available</span>
+        </div>
+        <h1 id="hero-title">Study <span>Together</span>, Achieve <span>More</span></h1>
+        <p>Join thousands of students in virtual study rooms. Focus with Pomodoro timers, collaborate in real-time, and build lasting study habits with a global community.</p>
+        <div class="hero-actions">
+            <a href="{% url 'Study Rooms' %}" class="btn btn-primary btn-lg">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                </svg>
+                Browse Study Rooms
+            </a>
+            <a href="{% url 'account_signup' %}" class="btn btn-secondary btn-lg">Create Free Account</a>
+        </div>
+        <div class="hero-stats">
+            <div class="stat-item">
+                <div class="stat-value" data-target="{{ total_users|floatformat:0 }}">{{ total_users|floatformat:0 }}</div>
+                <div class="stat-label">Active Students</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" data-target="{{ total_rooms|floatformat:0 }}">{{ total_rooms|floatformat:0 }}</div>
+                <div class="stat-label">Study Rooms</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" data-target="{{ total_focus_hours|floatformat:0 }}">{{ total_focus_hours|floatformat:0 }}</div>
+                <div class="stat-label">Hours Focused</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" data-target="95">95%</div>
+                <div class="stat-label">Retention Rate</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features" aria-labelledby="features-title">
+    <div class="container">
+        <header class="section-header">
+            <span class="section-tag">Features</span>
+            <h2 id="features-title">Everything You Need to Focus</h2>
+            <p>Powerful tools designed to help you study smarter, not harder</p>
+        </header>
+        <div class="features-grid">
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <h3>Virtual Study Rooms</h3>
+                <p>Join or create topic-specific rooms. Study with video, voice, or text chat. Public, private, or invite-only.</p>
+            </article>
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                </div>
+                <h3>Smart Pomodoro Timer</h3>
+                <p>Customizable focus/break intervals, auto-switching, session tracking, and ambient sounds for deep work.</p>
+            </article>
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                </div>
+                <h3>Shared Resources</h3>
+                <p>Upload notes, share documents, collaborate on whiteboards, and pin important links for your study group.</p>
+            </article>
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <h3>Global Community</h3>
+                <p>Connect with learners worldwide. Find study partners, join challenges, and build accountability.</p>
+            </article>
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                </div>
+                <h3>Progress Analytics</h3>
+                <p>Track focus time, streaks, completed sessions, and visualize your productivity patterns over time.</p>
+            </article>
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </div>
+                <h3>Customizable Experience</h3>
+                <p>Themes, notification preferences, focus music, keyboard shortcuts, and accessibility options.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-it-works" aria-labelledby="how-title">
+    <div class="container">
+        <header class="section-header">
+            <span class="section-tag">How It Works</span>
+            <h2 id="how-title">Start Studying in 3 Steps</h2>
+            <p>Get set up in minutes and join your first session today</p>
+        </header>
+        <div class="steps-grid">
+            <article class="step-card">
+                <div class="step-number">1</div>
+                <h3>Create Your Profile</h3>
+                <p>Sign up with email or GitHub. Set your study goals, preferred subjects, and notification preferences.</p>
+            </article>
+            <article class="step-card">
+                <div class="step-number">2</div>
+                <h3>Find or Create a Room</h3>
+                <p>Browse rooms by topic, schedule, or popularity. Or create your own with custom settings and invite friends.</p>
+            </article>
+            <article class="step-card">
+                <div class="step-number">3</div>
+                <h3>Focus & Achieve</h3>
+                <p>Start a Pomodoro session, collaborate with peers, track progress, and build consistent study habits.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<!-- Rooms Preview -->
+<section class="rooms-preview" aria-labelledby="preview-title">
+    <div class="container">
+        <header class="preview-header">
+            <h2 id="preview-title">Popular Study Rooms</h2>
+            <a href="{% url 'Study Rooms' %}" class="btn btn-ghost">View All Rooms</a>
+        </header>
+        <div class="rooms-preview-grid">
+            {% for room in featured_rooms %}
+            <article class="room-preview-card">
+                <div class="room-preview-header">
+                    <h3 class="room-preview-name">{{ room.name }}</h3>
+                    <span class="status-badge status-{{ room.status }}">{{ room.get_status_display }}</span>
+                </div>
+                <p class="room-preview-description">{{ room.description|truncatewords:20 }}</p>
+                <div class="room-preview-meta">
+                    <div class="room-preview-topic">
+                        <span class="topic-label">Focus:</span>
+                        <span class="topic-value">{{ room.topic.name|default:"General" }}</span>
+                    </div>
+                    <div class="room-preview-participants">
+                        <span class="participant-count">{{ room.current_participants }}</span>
+                        <span class="participant-max">/ {{ room.max_participants }}</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                </div>
+                <div class="room-preview-tags">
+                    <span class="tag">{{ room.get_room_type_display }}</span>
+                    {% if room.enable_voice %}<span class="tag">Voice</span>{% endif %}
+                    {% if room.enable_chat %}<span class="tag">Chat</span>{% endif %}
+                </div>
+                <a href="{% url 'Room Detail' room.id %}" class="btn btn-primary">Join Room</a>
+            </article>
+            {% empty %}
+            <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: var(--space-12);">
+                <p>No active rooms yet. Be the first to create one!</p>
+                <a href="{% url 'Create Room' %}" class="btn btn-primary" style="margin-top: var(--space-4);">Create Room</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section" aria-labelledby="cta-title">
+    <div class="cta-content">
+        <h2 id="cta-title">Ready to Study Smarter?</h2>
+        <p>Join thousands of students who've improved their focus and grades with StudyLimitless. Free to start, no credit card required.</p>
+        <a href="{% url 'account_signup' %}" class="btn btn-light btn-lg">Create Free Account</a>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'base/js/pages/home.js' %}"></script>
+{% endblock %}

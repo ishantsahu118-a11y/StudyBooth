@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}Join virtual study rooms and study together with others{% endblock %}">
+    <title>{% block title %}StudyLimitless{% endblock %}</title>
+
+    {% block meta_tags %}{% endblock %}
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Main Theme CSS -->
+    <link rel="stylesheet" href="{% static 'base/css/main.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% block header %}
+        {% include 'navbar.html' %}
+    {% endblock %}
+
+    <main id="main-content" class="main-content" role="main">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block footer %}
+    <footer class="site-footer" role="contentinfo">
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; {% now "Y" %} StudyLimitless. Study together, grow together.</p>
+                <nav class="footer-nav" aria-label="Footer navigation">
+                    <a href="#" class="footer-link">Privacy</a>
+                    <a href="#" class="footer-link">Terms</a>
+                    <a href="#" class="footer-link">Contact</a>
+                </nav>
+            </div>
+        </div>
+    </footer>
+    {% endblock %}
+
+    {% block modals %}
+        <div class="modal-overlay" id="createRoomModal" role="dialog" aria-labelledby="modalTitle" aria-hidden="true">
+            <div class="modal">
+                <header class="modal-header">
+                    <h3 id="modalTitle">Create New Study Room</h3>
+                    <button class="modal-close" id="closeModalBtn" aria-label="Close modal">&times;</button>
+                </header>
+                <form class="modal-form" id="createRoomForm">
+                    <div class="form-group">
+                        <label for="roomName">Room Name</label>
+                        <input type="text" id="roomName" name="roomName" placeholder="e.g., Morning Focus Session" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="roomTopic">Topic / Subject</label>
+                        <select id="roomTopic" name="roomTopic" required>
+                            <option value="">Select a topic</option>
+                            <option value="general">General / Mixed</option>
+                            <option value="cs">Computer Science / Programming</option>
+                            <option value="languages">Language Learning</option>
+                            <option value="math-science">Mathematics / Science</option>
+                            <option value="writing">Creative Writing</option>
+                            <option value="exam-prep">Exam Preparation</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="roomDescription">Description</label>
+                        <textarea id="roomDescription" name="roomDescription" placeholder="What will people study here? Any rules or structure?" rows="3"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="maxParticipants">Max Participants</label>
+                            <input type="number" id="maxParticipants" name="maxParticipants" min="2" max="50" value="15" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="roomType">Room Type</label>
+                            <select id="roomType" name="roomType" required>
+                                <option value="pomodoro">Pomodoro (25/5)</option>
+                                <option value="custom-timer">Custom Timer</option>
+                                <option value="open">Open Session</option>
+                                <option value="structured">Structured / Scheduled</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <fieldset>
+                            <legend>Features</legend>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="features" value="video"> Video Enabled
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="features" value="voice"> Voice Chat
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="features" value="chat"> Text Chat
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="features" value="screen-share"> Screen Share
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="features" value="whiteboard"> Whiteboard
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="features" value="resources"> Resource Sharing
+                                </label>
+                            </div>
+                        </fieldset>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelCreateBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Room</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endblock %}
+
+    <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+    {% block extra_js %}{% endblock %}
+
+    <!-- Base JavaScript -->
+    <script src="{% static 'base/js/main.js' %}"></script>
+    <script src="{% static 'base/js/pages/navbar.js' %}"></script>
+</body>
+</html>
