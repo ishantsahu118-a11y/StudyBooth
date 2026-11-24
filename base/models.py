@@ -98,6 +98,21 @@ class StudyRoom(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+            while StudyRoom.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        if not self.invite_code and self.is_private:
+            from django.utils.crypto import get_random_string
+            self.invite_code = get_random_string(8, allowed_chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789').lower()
+        super().save(*args, **kwargs)
+
     @property
     def is_active_now(self):
         return self.status == 'active' and self.current_participants > 0

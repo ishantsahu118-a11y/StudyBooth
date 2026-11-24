@@ -1,0 +1,74 @@
+{% extends 'main.html' %}
+{% load static %}
+
+{% block title %}My Invitations - StudyLimitless{% endblock %}
+
+{% block meta_description %}View and manage your study room invitations{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="create-room-hero" aria-labelledby="invitations-title">
+    <div class="create-room-hero-content">
+        <h1 id="invitations-title">My Invitations</h1>
+        <p>Manage your private room invitations</p>
+    </div>
+</section>
+
+<!-- Invitations List -->
+<main class="create-room-main" role="main">
+    {% if invitations %}
+    <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+        {% for invitation in invitations %}
+        <article class="sidebar-card" style="border-left: 4px solid {% if invitation.is_accepted %}#10b981{% elif invitation.is_declined %}#ef4444{% else %}#f59e0b{% endif %};">
+            <div class="sidebar-card-content" style="padding: var(--space-5);">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2);">
+                            <h3 style="font-size: var(--text-lg); font-weight: 600; margin: 0;">{{ invitation.room.name }}</h3>
+                            <span class="badge badge-{% if invitation.is_accepted %}success{% elif invitation.is_declined %}danger{% else %}warning{% endif %}"
+                                style="font-size: var(--text-xs); padding: 2px 8px;">
+                                {% if invitation.is_accepted %}Accepted{% elif invitation.is_declined %}Declined{% else %}Pending{% endif %}
+                            </span>
+                        </div>
+                        <p style="color: var(--color-text-secondary); font-size: var(--text-sm); margin-bottom: var(--space-2);">
+                            Invited by <strong>{{ invitation.invited_by.username }}</strong>
+                            {% if invitation.message %}<br><em>{{ invitation.message }}</em>{% endif %}
+                        </p>
+                        <div style="display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-xs); color: var(--color-text-muted);">
+                            <span>{{ invitation.room.topic.name|default:"General" }}</span>
+                            <span>·</span>
+                            <span>{{ invitation.created_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: var(--space-2); flex-shrink: 0;">
+                        {% if not invitation.is_accepted and not invitation.is_declined %}
+                        <form method="POST" action="{% url 'Respond Invitation' invitation.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="accept">
+                            <button type="submit" class="btn btn-primary btn-sm">Accept</button>
+                        </form>
+                        <form method="POST" action="{% url 'Respond Invitation' invitation.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="decline">
+                            <button type="submit" class="btn btn-secondary btn-sm">Decline</button>
+                        </form>
+                        {% elif invitation.is_accepted %}
+                        <a href="{% url 'Room Detail' invitation.room.id %}" class="btn btn-primary btn-sm">Enter Room</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="text-align: center; padding: var(--space-16) var(--space-4);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 64px; height: 64px; margin: 0 auto var(--space-4); opacity: 0.5;">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <h3>No Invitations</h3>
+        <p>You don't have any room invitations yet</p>
+    </div>
+    {% endif %}
+</main>
+{% endblock %}

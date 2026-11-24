@@ -5,7 +5,9 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User
 from django.db import models
 from django.core.paginator import Paginator
-from .models import StudyRoom, Topic, RoomParticipant, StudySession, UserProfile, Follow
+from django.utils.crypto import get_random_string
+from django.utils import timezone
+from .models import StudyRoom, Topic, RoomParticipant, StudySession, UserProfile, Follow, RoomInvitation, RoomChatMessage
 
 
 def home(request):
@@ -132,13 +134,33 @@ def join_room(request, room_id):
     """Join a study room"""
     room = get_object_or_404(StudyRoom, id=room_id)
 
-    if not room.can_join(request.user):
-        return JsonResponse({'success': False, 'error': 'Room is full or private'}, status=400)
-
     # Check if already in room
     existing = RoomParticipant.objects.filter(room=room, user=request.user, is_active=True).first()
     if existing:
         return JsonResponse({'success': True, 'redirect': f'/room/{room.id}/'})
+
+    # Check member limit
+    if room.current_participants >= room.max_participants:
+        return JsonResponse({'success': False, 'error': 'Room is full'}, status=400)
+
+    # Check access for private rooms
+    if room.is_private:
+        # Check if user is host or moderator
+        if room.created_by == request.user or request.user in room.moderators.all():
+            pass  # Allow
+        # Check if user has valid invitation
+        elif RoomInvitation.objects.filter(
+            room=room, invited_user=request.user, is_accepted=True
+        ).exists():
+            pass  # Allow
+        # Check invite code from request
+        elif request.POST.get('invite_code') and request.POST.get('invite_code').lower() == (room.invite_code or '').lower():
+            pass  # Allow
+        # Check password
+        elif room.password and request.POST.get('password') == room.password:
+            pass  # Allow
+        else:
+            return JsonResponse({'success': False, 'error': 'This room is private. You need an invite code, password, or invitation.'}, status=403)
 
     # Determine role
     role = 'host' if room.created_by == request.user else 'moderator' if request.user in room.moderators.all() else 'participant'
@@ -196,8 +218,9 @@ def create_room(request):
         max_participants = int(request.POST.get('max_participants', 15))
         focus_duration = int(request.POST.get('focus_duration', 25))
         break_duration = int(request.POST.get('break_duration', 5))
+        long_break_duration = int(request.POST.get('long_break_duration', 15))
         cycles = int(request.POST.get('cycles', 4))
-        long_break_duration = 15  # Default, not stored in model yet
+        topic_color = request.POST.get('topic_color', '#6366f1')
 
         # Features
         enable_video = request.POST.get('enable_video') == 'on'
@@ -215,6 +238,11 @@ def create_room(request):
         if topic_id:
             topic = Topic.objects.filter(id=topic_id).first()
 
+        # Generate invite code for private rooms
+        invite_code = None
+        if is_private:
+            invite_code = get_random_string(8, allowed_chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789').lower()
+
         room = StudyRoom.objects.create(
             name=name,
             topic=topic,
@@ -223,6 +251,7 @@ def create_room(request):
             max_participants=max_participants,
             focus_duration=focus_duration,
             break_duration=break_duration,
+            long_break_duration=long_break_duration,
             cycles=cycles,
             enable_video=enable_video,
             enable_voice=enable_voice,
@@ -232,6 +261,8 @@ def create_room(request):
             enable_resources=enable_resources,
             is_private=is_private,
             password=password,
+            invite_code=invite_code,
+            topic_color=topic_color,
             created_by=request.user,
             status='scheduled',
         )
@@ -313,3 +344,216 @@ def topic_rooms(request, topic_slug):
         'topic': topic,
     }
     return render(request, 'studylimitless.html', context)
+
+
+# ========================================
+# Moderator Actions
+# ========================================
+
+@login_required
+@require_http_methods(["POST"])
+def mute_participant(request, room_id, participant_id):
+    """Mute/unmute a participant (host/moderator only)"""
+    room = get_object_or_404(StudyRoom, id=room_id)
+    participant = get_object_or_404(RoomParticipant, id=participant_id, room=room)
+
+    # Check permissions
+    requester = RoomParticipant.objects.filter(room=room, user=request.user, is_active=True).first()
+    if not requester or requester.role not in ['host', 'moderator']:
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
+    if participant.user == request.user:
+        return JsonResponse({'success': False, 'error': 'Cannot mute yourself'}, status=400)
+
+    if participant.role == 'host':
+        return JsonResponse({'success': False, 'error': 'Cannot mute the host'}, status=400)
+
+    participant.is_muted = not participant.is_muted
+    participant.save(update_fields=['is_muted'])
+
+    return JsonResponse({
+        'success': True,
+        'muted': participant.is_muted,
+        'message': f"{participant.user.username} has been {'muted' if participant.is_muted else 'unmuted'}"
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def remove_participant(request, room_id, participant_id):
+    """Remove a participant from room (host/moderator only)"""
+    room = get_object_or_404(StudyRoom, id=room_id)
+    participant = get_object_or_404(RoomParticipant, id=participant_id, room=room)
+
+    # Check permissions
+    requester = RoomParticipant.objects.filter(room=room, user=request.user, is_active=True).first()
+    if not requester or requester.role not in ['host', 'moderator']:
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
+    if participant.user == request.user:
+        return JsonResponse({'success': False, 'error': 'Cannot remove yourself'}, status=400)
+
+    if participant.role == 'host':
+        return JsonResponse({'success': False, 'error': 'Cannot remove the host'}, status=400)
+
+    if participant.role == 'moderator' and requester.role != 'host':
+        return JsonResponse({'success': False, 'error': 'Only host can remove moderators'}, status=403)
+
+    username = participant.user.username
+    participant.leave()
+
+    return JsonResponse({
+        'success': True,
+        'message': f"{username} has been removed from the room"
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def ban_participant(request, room_id, participant_id):
+    """Ban a participant from room (host only)"""
+    room = get_object_or_404(StudyRoom, id=room_id)
+    participant = get_object_or_404(RoomParticipant, id=participant_id, room=room)
+
+    # Check permissions - only host can ban
+    requester = RoomParticipant.objects.filter(room=room, user=request.user, is_active=True).first()
+    if not requester or requester.role != 'host':
+        return JsonResponse({'success': False, 'error': 'Only the host can ban users'}, status=403)
+
+    if participant.user == request.user:
+        return JsonResponse({'success': False, 'error': 'Cannot ban yourself'}, status=400)
+
+    if participant.role == 'host':
+        return JsonResponse({'success': False, 'error': 'Cannot ban the host'}, status=400)
+
+    username = participant.user.username
+    participant.leave()
+
+    # TODO: Add to banned users list (could create RoomBan model)
+    # For now, just remove them
+
+    return JsonResponse({
+        'success': True,
+        'message': f"{username} has been banned from the room"
+    })
+
+
+# ========================================
+# Room Invitation Views
+# ========================================
+
+@login_required
+@require_http_methods(["POST"])
+def send_invitation(request, room_id):
+    """Send invitation to join private room"""
+    room = get_object_or_404(StudyRoom, id=room_id)
+
+    # Check permissions
+    if room.created_by != request.user and request.user not in room.moderators.all():
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
+    if not room.is_private:
+        return JsonResponse({'success': False, 'error': 'Room is not private'}, status=400)
+
+    username = request.POST.get('username')
+    message = request.POST.get('message', '')
+
+    if not username:
+        return JsonResponse({'success': False, 'error': 'Username required'}, status=400)
+
+    invited_user = get_object_or_404(User, username=username)
+
+    if invited_user == request.user:
+        return JsonResponse({'success': False, 'error': 'Cannot invite yourself'}, status=400)
+
+    # Check if already a participant
+    if RoomParticipant.objects.filter(room=room, user=invited_user, is_active=True).exists():
+        return JsonResponse({'success': False, 'error': 'User is already in the room'}, status=400)
+
+    # Check if already invited
+    existing = RoomInvitation.objects.filter(room=room, invited_user=invited_user).first()
+    if existing:
+        if existing.is_accepted:
+            return JsonResponse({'success': False, 'error': 'User has already accepted an invitation'}, status=400)
+        elif not existing.is_declined:
+            return JsonResponse({'success': False, 'error': 'Invitation already sent'}, status=400)
+        # If declined, allow re-invite
+        existing.delete()
+
+    invitation = RoomInvitation.objects.create(
+        room=room,
+        invited_by=request.user,
+        invited_user=invited_user,
+        message=message,
+    )
+
+    return JsonResponse({
+        'success': True,
+        'invitation_id': invitation.id,
+        'message': f"Invitation sent to {username}"
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def respond_invitation(request, invitation_id):
+    """Accept or decline a room invitation"""
+    invitation = get_object_or_404(RoomInvitation, id=invitation_id, invited_user=request.user)
+
+    if invitation.is_accepted or invitation.is_declined:
+        return JsonResponse({'success': False, 'error': 'Invitation already responded to'}, status=400)
+
+    action = request.POST.get('action')
+
+    if action == 'accept':
+        invitation.is_accepted = True
+        invitation.responded_at = timezone.now()
+        invitation.save(update_fields=['is_accepted', 'responded_at'])
+
+        # Add user to room
+        participant, created = RoomParticipant.objects.get_or_create(
+            room=invitation.room,
+            user=request.user,
+            defaults={'role': 'participant', 'is_active': True}
+        )
+        if not created and not participant.is_active:
+            participant.is_active = True
+            participant.left_at = None
+            participant.save(update_fields=['is_active', 'left_at'])
+
+        invitation.room.current_participants = RoomParticipant.objects.filter(
+            room=invitation.room, is_active=True
+        ).count()
+        invitation.room.save(update_fields=['current_participants'])
+
+        return JsonResponse({
+            'success': True,
+            'action': 'accepted',
+            'redirect': f'/room/{invitation.room.id}/'
+        })
+
+    elif action == 'decline':
+        invitation.is_declined = True
+        invitation.responded_at = timezone.now()
+        invitation.save(update_fields=['is_declined', 'responded_at'])
+
+        return JsonResponse({
+            'success': True,
+            'action': 'declined',
+            'message': 'Invitation declined'
+        })
+
+    return JsonResponse({'success': False, 'error': 'Invalid action'}, status=400)
+
+
+@login_required
+def my_invitations(request):
+    """List user's received invitations"""
+    invitations = RoomInvitation.objects.filter(
+        invited_user=request.user
+    ).select_related('room', 'room__topic', 'invited_by').order_by('-created_at')
+
+    context = {
+        'invitations': invitations,
+    }
+    return render(request, 'invitations.html', context)
