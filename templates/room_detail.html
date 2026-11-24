@@ -92,7 +92,7 @@
                 <a href="{% url 'account_login' %}?next={{ request.path }}" class="btn btn-primary">Login to Join</a>
             {% endif %}
             {% if user == room.created_by or user.is_staff %}
-            <a href="{% url 'Edit Room' room.id %}" class="btn btn-secondary">Edit</a>
+            <button class="btn btn-secondary" disabled>Edit (coming soon)</button>
             {% endif %}
         </div>
     </div>

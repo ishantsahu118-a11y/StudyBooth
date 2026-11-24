@@ -1,0 +1,371 @@
+{% extends 'main.html' %}
+{% load static %}
+
+{% block title %}Create Study Room - StudyLimitless{% endblock %}
+
+{% block meta_description %}Create a new virtual study room with Pomodoro timer, video, voice, and chat features.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/pages/create_room.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="create-room-hero" aria-labelledby="create-room-title">
+    <div class="create-room-hero-content">
+        <h1 id="create-room-title">Create Study Room</h1>
+        <p>Set up your perfect study environment. Customize timer, features, and invite others to join.</p>
+    </div>
+</section>
+
+<!-- Main Form -->
+<main class="create-room-main" role="main">
+    <form class="create-room-form" id="createRoomForm" method="POST" action="{% url 'Create Room' %}" novalidate>
+        {% csrf_token %}
+
+        <!-- Basic Info -->
+        <section class="form-section" aria-labelledby="basic-info-heading">
+            <header class="form-section-header">
+                <div class="form-section-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div>
+                    <h2 id="basic-info-heading">Basic Information</h2>
+                    <p>Required fields marked with *</p>
+                </div>
+            </header>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="id_name">Room Name <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="id_name" name="name" required maxlength="100" placeholder="e.g., Focused Deep Work Session" autocomplete="off">
+                    <span class="form-hint">Max 100 characters</span>
+                    <span class="form-error"></span>
+                </div>
+            </div>
+
+            <div class="form-group full-width">
+                <label class="form-label" for="id_description">Description</label>
+                <textarea class="form-textarea" id="id_description" name="description" rows="4" placeholder="Describe what this room is for, any rules, or study goals..."></textarea>
+                <span class="form-hint">Optional - helps others understand your room's purpose</span>
+            </div>
+
+            <div class="form-group full-width">
+                <label class="form-label" for="id_topic">Topic</label>
+                <select class="form-select" id="id_topic" name="topic">
+                    <option value="">Select a topic (optional)</option>
+                    {% for topic in topics %}
+                    <option value="{{ topic.id }}" style="--topic-color: {{ topic.color }}">{{ topic.name }}</option>
+                    {% endfor %}
+                </select>
+                <span class="form-hint">Choose a focus area for your room</span>
+            </div>
+        </section>
+
+        <!-- Room Type -->
+        <section class="form-section" aria-labelledby="room-type-heading">
+            <header class="form-section-header">
+                <div class="form-section-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                    </svg>
+                </div>
+                <div>
+                    <h2 id="room-type-heading">Room Type</h2>
+                    <p>Choose the timer structure for your sessions</p>
+                </div>
+            </header>
+
+            <div class="room-type-options" role="radiogroup" aria-label="Room type">
+                <label class="room-type-option">
+                    <input type="radio" name="room_type" value="pomodoro" checked>
+                    <div class="room-type-card">
+                        <div class="room-type-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+                        </div>
+                        <span class="room-type-name">Pomodoro</span>
+                        <span class="room-type-desc">25/5 min cycles with long breaks</span>
+                    </div>
+                </label>
+
+                <label class="room-type-option">
+                    <input type="radio" name="room_type" value="custom_timer">
+                    <div class="room-type-card">
+                        <div class="room-type-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l2 2"></path></svg>
+                        </div>
+                        <span class="room-type-name">Custom Timer</span>
+                        <span class="room-type-desc">Set your own focus/break durations</span>
+                    </div>
+                </label>
+
+                <label class="room-type-option">
+                    <input type="radio" name="room_type" value="open">
+                    <div class="room-type-card">
+                        <div class="room-type-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        </div>
+                        <span class="room-type-name">Open Session</span>
+                        <span class="room-type-desc">No timer, free collaboration</span>
+                    </div>
+                </label>
+
+                <label class="room-type-option">
+                    <input type="radio" name="room_type" value="structured">
+                    <div class="room-type-card">
+                        <div class="room-type-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                        </div>
+                        <span class="room-type-name">Structured</span>
+                        <span class="room-type-desc">Planned sessions with agenda</span>
+                    </div>
+                </label>
+            </div>
+        </section>
+
+        <!-- Timer Settings (conditional) -->
+        <section class="form-section" aria-labelledby="timer-settings-heading" id="timerSettingsSection">
+            <header class="form-section-header">
+                <div class="form-section-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 id="timer-settings-heading">Timer Settings</h2>
+                    <p>Configure focus and break durations</p>
+                </div>
+            </header>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="id_focus_duration">Focus Duration (minutes) <span class="required">*</span></label>
+                    <input type="number" class="form-input" id="id_focus_duration" name="focus_duration" required min="1" max="180" value="25">
+                    <span class="form-error"></span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="id_break_duration">Break Duration (minutes) <span class="required">*</span></label>
+                    <input type="number" class="form-input" id="id_break_duration" name="break_duration" required min="1" max="60" value="5">
+                    <span class="form-error"></span>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="id_cycles">Cycles before Long Break <span class="required">*</span></label>
+                    <input type="number" class="form-input" id="id_cycles" name="cycles" required min="1" max="20" value="4">
+                    <span class="form-hint">Number of focus sessions before a long break</span>
+                    <span class="form-error"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section class="form-section" aria-labelledby="features-heading">
+            <header class="form-section-header">
+                <div class="form-section-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                </div>
+                <div>
+                    <h2 id="features-heading">Collaboration Features</h2>
+                    <p>Enable features for your room participants</p>
+                </div>
+            </header>
+
+            <div class="toggle-group" role="group" aria-label="Room features">
+                <div class="toggle-item">
+                    <label class="toggle-label">
+                        <input type="checkbox" name="enable_video" id="id_enable_video">
+                        <span class="toggle-slider"></span>
+                        <div class="toggle-text">
+                            <span class="toggle-title">Video</span>
+                            <span class="toggle-desc">See each other during sessions</span>
+                        </div>
+                    </label>
+                </div>
+                <div class="toggle-item">
+                    <label class="toggle-label">
+                        <input type="checkbox" name="enable_voice" id="id_enable_voice" checked>
+                        <span class="toggle-slider"></span>
+                        <div class="toggle-text">
+                            <span class="toggle-title">Voice Chat</span>
+                            <span class="toggle-desc">Talk while studying</span>
+                        </div>
+                    </label>
+                </div>
+                <div class="toggle-item">
+                    <label class="toggle-label">
+                        <input type="checkbox" name="enable_chat" id="id_enable_chat" checked>
+                        <span class="toggle-slider"></span>
+                        <div class="toggle-text">
+                            <span class="toggle-title">Text Chat</span>
+                            <span class="toggle-desc">Message during sessions</span>
+                        </div>
+                    </label>
+                </div>
+                <div class="toggle-item">
+                    <label class="toggle-label">
+                        <input type="checkbox" name="enable_screen_share" id="id_enable_screen_share">
+                        <span class="toggle-slider"></span>
+                        <div class="toggle-text">
+                            <span class="toggle-title">Screen Share</span>
+                            <span class="toggle-desc">Share your screen with others</span>
+                        </div>
+                    </label>
+                </div>
+                <div class="toggle-item">
+                    <label class="toggle-label">
+                        <input type="checkbox" name="enable_whiteboard" id="id_enable_whiteboard">
+                        <span class="toggle-slider"></span>
+                        <div class="toggle-text">
+                            <span class="toggle-title">Whiteboard</span>
+                            <span class="toggle-desc">Collaborative drawing board</span>
+                        </div>
+                    </label>
+                </div>
+                <div class="toggle-item">
+                    <label class="toggle-label">
+                        <input type="checkbox" name="enable_resources" id="id_enable_resources" checked>
+                        <span class="toggle-slider"></span>
+                        <div class="toggle-text">
+                            <span class="toggle-title">Resources</span>
+                            <span class="toggle-desc">Share links and documents</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <!-- Access Settings -->
+        <section class="form-section" aria-labelledby="access-heading">
+            <header class="form-section-header">
+                <div class="form-section-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 id="access-heading">Access Settings</h2>
+                    <p>Control who can join your room</p>
+                </div>
+            </header>
+
+            <div class="toggle-group">
+                <div class="toggle-item" style="flex: 1 1 100%;">
+                    <label class="toggle-label">
+                        <input type="checkbox" name="is_private" id="id_is_private">
+                        <span class="toggle-slider"></span>
+                        <div class="toggle-text">
+                            <span class="toggle-title">Private Room</span>
+                            <span class="toggle-desc">Require password or invitation to join</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group" id="passwordGroup" style="display: none;">
+                <label class="form-label" for="id_password">Room Password</label>
+                <div style="position: relative;">
+                    <input type="password" class="form-input" id="id_password" name="password" placeholder="Enter a password (min 4 characters)">
+                    <button type="button" class="password-toggle" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--color-text-muted); cursor: pointer; padding: 4px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                </div>
+                <span class="form-hint">Leave blank for no password (but room stays private)</span>
+                <span class="form-error"></span>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="id_max_participants">Max Participants <span class="required">*</span></label>
+                    <input type="number" class="form-input" id="id_max_participants" name="max_participants" required min="2" max="100" value="15">
+                    <span class="form-error"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Topic Color -->
+        <section class="form-section" aria-labelledby="color-heading">
+            <header class="form-section-header">
+                <div class="form-section-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 2v20M2 12h20"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 id="color-heading">Room Color</h2>
+                    <p>Choose a color theme for your room</p>
+                </div>
+            </header>
+
+            <div class="color-options" role="radiogroup" aria-label="Room color">
+                {% for color in room_colors %}
+                <label class="color-option">
+                    <input type="radio" name="topic_color" value="{{ color }}" {% if color == '#6366f1' %}checked{% endif %}>
+                    <span class="color-swatch" style="background-color: {{ color }}"></span>
+                </label>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Form Actions -->
+        <footer class="form-actions">
+            <button type="button" class="btn btn-secondary" id="cancelCreateRoomModal">Cancel</button>
+            <button type="submit" class="btn btn-primary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Create Room
+            </button>
+        </footer>
+    </form>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'base/js/pages/create_room.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle password field visibility
+    const privateCheckbox = document.getElementById('id_is_private');
+    const passwordGroup = document.getElementById('passwordGroup');
+
+    if (privateCheckbox && passwordGroup) {
+        privateCheckbox.addEventListener('change', function() {
+            passwordGroup.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    // Room type change handler for timer settings visibility
+    const roomTypeInputs = document.querySelectorAll('input[name="room_type"]');
+    const timerSettings = document.getElementById('timerSettingsSection');
+
+    roomTypeInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            if (timerSettings) {
+                // Show timer settings for pomodoro and custom_timer
+                timerSettings.style.display = ['pomodoro', 'custom_timer'].includes(this.value) ? 'block' : 'none';
+            }
+        });
+    });
+
+    // Initialize timer settings visibility
+    const checkedType = document.querySelector('input[name="room_type"]:checked');
+    if (checkedType && timerSettings) {
+        timerSettings.style.display = ['pomodoro', 'custom_timer'].includes(checkedType.value) ? 'block' : 'none';
+    }
+});
+</script>
+{% endblock %}

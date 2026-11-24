@@ -173,9 +173,20 @@ def leave_room(request, room_id):
 
 @login_required
 def create_room(request):
-    """Create a new study room (AJAX)"""
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
+    """Create a new study room (GET for form, POST for creation)"""
+    # Room color options
+    room_colors = [
+        '#6366f1', '#8b5cf6', '#ec4899', '#ef4444',
+        '#f97316', '#eab308', '#84cc16', '#22c55e',
+        '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
+    ]
+
+    if request.method == 'GET':
+        topics = Topic.objects.filter(is_active=True).order_by('order', 'name')
+        return render(request, 'create_room.html', {
+            'topics': topics,
+            'room_colors': room_colors,
+        })
 
     try:
         name = request.POST.get('name')
@@ -186,6 +197,7 @@ def create_room(request):
         focus_duration = int(request.POST.get('focus_duration', 25))
         break_duration = int(request.POST.get('break_duration', 5))
         cycles = int(request.POST.get('cycles', 4))
+        long_break_duration = 15  # Default, not stored in model yet
 
         # Features
         enable_video = request.POST.get('enable_video') == 'on'
