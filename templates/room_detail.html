@@ -1,1182 +1,336 @@
 {% extends 'main.html' %}
+{% load static %}
 
 {% block title %}{{ room.name }} - StudyLimitless{% endblock %}
 
-{% block meta_description %}{{ room.description|truncatewords:30 }}{% endblock %}
+{% block meta_description %}{{ room.description|truncatewords:30|default:"Join this study room on StudyLimitless" }}{% endblock %}
 
 {% block extra_css %}
-<style>
-    /* Room Detail Page Styles */
-    .room-detail-header {
-        padding: var(--space-8) var(--space-4);
-        background-color: var(--color-bg-secondary);
-        border-bottom: 1px solid var(--color-border);
-    }
-
-    .room-header-content {
-        max-width: var(--container-max);
-        margin: 0 auto;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: var(--space-6);
-    }
-
-    .room-header-main {
-        flex: 1;
-        min-width: 300px;
-    }
-
-    .room-header-meta {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: var(--space-3);
-        margin-bottom: var(--space-4);
-    }
-
-    .room-name {
-        font-size: var(--text-3xl);
-        font-weight: 700;
-        color: var(--color-text);
-    }
-
-    .room-status-badge {
-        padding: var(--space-1) var(--space-3);
-        border-radius: var(--radius-full);
-        font-size: var(--text-sm);
-        font-weight: 600;
-    }
-
-    .room-status-active { background-color: #d1fae5; color: #065f46; }
-    .room-status-scheduled { background-color: #fef3c7; color: #92400e; }
-    .room-status-ended { background-color: #f3f4f6; color: #374151; }
-
-    .room-topic-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-1);
-        padding: var(--space-1) var(--space-2);
-        background-color: var(--color-bg-tertiary);
-        border-radius: var(--radius-full);
-        font-size: var(--text-sm);
-        color: var(--color-text-secondary);
-    }
-
-    .room-topic-badge .topic-color {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-    }
-
-    .room-description {
-        color: var(--color-text-secondary);
-        font-size: var(--text-base);
-        line-height: 1.6;
-        margin-bottom: var(--space-4);
-    }
-
-    .room-stats {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-6);
-        font-size: var(--text-sm);
-        color: var(--color-text-secondary);
-    }
-
-    .room-stat {
-        display: flex;
-        align-items: center;
-        gap: var(--space-1);
-    }
-
-    .room-stat strong {
-        color: var(--color-text);
-    }
-
-    .room-tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-2);
-        margin-top: var(--space-4);
-    }
-
-    .room-header-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-3);
-        align-items: center;
-    }
-
-    .room-main {
-        padding: var(--space-8) var(--space-4);
-        max-width: var(--container-max);
-        margin: 0 auto;
-    }
-
-    .room-grid {
-        display: grid;
-        grid-template-columns: 1fr 380px;
-        gap: var(--space-8);
-    }
-
-    @media (max-width: 1024px) {
-        .room-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    /* Timer Section */
-    .timer-section {
-        background-color: var(--color-surface);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-xl);
-        padding: var(--space-8);
-    }
-
-    .timer-display {
-        text-align: center;
-        margin-bottom: var(--space-8);
-    }
-
-    .timer-circle {
-        position: relative;
-        width: 280px;
-        height: 280px;
-        margin: 0 auto var(--space-6);
-    }
-
-    .timer-circle svg {
-        width: 100%;
-        height: 100%;
-        transform: rotate(-90deg);
-    }
-
-    .timer-circle-bg {
-        fill: none;
-        stroke: var(--color-border);
-        stroke-width: 8;
-    }
-
-    .timer-circle-progress {
-        fill: none;
-        stroke: var(--color-primary);
-        stroke-width: 8;
-        stroke-linecap: round;
-        stroke-dasharray: 879;
-        stroke-dashoffset: 0;
-        transition: stroke-dashoffset 1s linear, stroke var(--transition-normal);
-    }
-
-    .timer-circle-progress.warning {
-        stroke: var(--color-warning);
-    }
-
-    .timer-circle-progress.danger {
-        stroke: var(--color-danger);
-    }
-
-    .timer-time {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: var(--text-5xl);
-        font-weight: 700;
-        font-family: var(--font-mono);
-        color: var(--color-text);
-        line-height: 1;
-    }
-
-    .timer-phase {
-        font-size: var(--text-lg);
-        font-weight: 600;
-        color: var(--color-text-secondary);
-        margin-bottom: var(--space-2);
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-    }
-
-    .timer-cycle {
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-    }
-
-    .timer-controls {
-        display: flex;
-        justify-content: center;
-        gap: var(--space-4);
-        flex-wrap: wrap;
-    }
-
-    .timer-btn {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: var(--text-xl);
-        transition: all var(--transition-fast);
-    }
-
-    .timer-btn-primary {
-        background-color: var(--color-primary);
-        color: white;
-    }
-
-    .timer-btn-primary:hover {
-        background-color: var(--color-primary-hover);
-        transform: scale(1.05);
-    }
-
-    .timer-btn-secondary {
-        background-color: var(--color-bg-tertiary);
-        color: var(--color-text);
-    }
-
-    .timer-btn-secondary:hover {
-        background-color: var(--color-border);
-    }
-
-    .timer-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .timer-settings {
-        margin-top: var(--space-8);
-        padding-top: var(--space-6);
-        border-top: 1px solid var(--color-border);
-    }
-
-    .timer-settings h4 {
-        font-size: var(--text-sm);
-        font-weight: 600;
-        color: var(--color-text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: var(--space-4);
-    }
-
-    .settings-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--space-4);
-    }
-
-    .setting-item {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-1);
-    }
-
-    .setting-label {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .setting-value {
-        font-size: var(--text-base);
-        font-weight: 500;
-        color: var(--color-text);
-    }
-
-    /* Sidebar */
-    .room-sidebar {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-6);
-    }
-
-    .sidebar-card {
-        background-color: var(--color-surface);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-xl);
-        overflow: hidden;
-    }
-
-    .sidebar-header {
-        padding: var(--space-4) var(--space-6);
-        border-bottom: 1px solid var(--color-border);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .sidebar-header h3 {
-        font-size: var(--text-lg);
-        font-weight: 600;
-    }
-
-    .sidebar-content {
-        padding: var(--space-4);
-    }
-
-    /* Participants */
-    .participant-list {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2);
-        max-height: 400px;
-        overflow-y: auto;
-    }
-
-    .participant-item {
-        display: flex;
-        align-items: center;
-        gap: var(--space-3);
-        padding: var(--space-2);
-        border-radius: var(--radius-md);
-        transition: background-color var(--transition-fast);
-    }
-
-    .participant-item:hover {
-        background-color: var(--color-bg-tertiary);
-    }
-
-    .participant-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color: var(--color-primary-light);
-        color: var(--color-primary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: var(--text-sm);
-        flex-shrink: 0;
-    }
-
-    .participant-avatar img {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
-    .participant-info {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .participant-name {
-        font-weight: 500;
-        color: var(--color-text);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .participant-role {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-    }
-
-    .participant-status {
-        display: flex;
-        align-items: center;
-        gap: var(--space-1);
-        font-size: var(--text-xs);
-    }
-
-    .status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-    }
-
-    .status-dot.active { background-color: var(--color-success); }
-    .status-dot.muted { background-color: var(--color-warning); }
-    .status-dot.off { background-color: var(--color-text-muted); }
-
-    /* Chat */
-    .chat-messages {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-3);
-        max-height: 400px;
-        overflow-y: auto;
-        padding: var(--space-2);
-    }
-
-    .chat-message {
-        display: flex;
-        gap: var(--space-2);
-        max-width: 85%;
-    }
-
-    .chat-message.own {
-        align-self: flex-end;
-        flex-direction: row-reverse;
-    }
-
-    .chat-message-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background-color: var(--color-primary-light);
-        color: var(--color-primary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: var(--text-xs);
-        flex-shrink: 0;
-    }
-
-    .chat-message-content {
-        background-color: var(--color-bg-tertiary);
-        border-radius: var(--radius-lg);
-        padding: var(--space-2) var(--space-3);
-    }
-
-    .chat-message.own .chat-message-content {
-        background-color: var(--color-primary);
-        color: white;
-    }
-
-    .chat-message-header {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        margin-bottom: var(--space-1);
-        font-size: var(--text-xs);
-    }
-
-    .chat-message-name {
-        font-weight: 600;
-        color: var(--color-text);
-    }
-
-    .chat-message.own .chat-message-name {
-        color: white;
-    }
-
-    .chat-message-time {
-        color: var(--color-text-muted);
-    }
-
-    .chat-message.own .chat-message-time {
-        color: rgba(255,255,255,0.7);
-    }
-
-    .chat-message-text {
-        font-size: var(--text-sm);
-        line-height: 1.5;
-    }
-
-    .chat-input-form {
-        display: flex;
-        gap: var(--space-2);
-        padding: var(--space-4);
-        border-top: 1px solid var(--color-border);
-    }
-
-    .chat-input {
-        flex: 1;
-        padding: var(--space-2) var(--space-3);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-full);
-        font-size: var(--text-sm);
-        background-color: var(--color-surface);
-        color: var(--color-text);
-    }
-
-    .chat-input:focus {
-        outline: none;
-        border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px var(--color-primary-light);
-    }
-
-    .chat-send-btn {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color: var(--color-primary);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .chat-send-btn:hover {
-        background-color: var(--color-primary-hover);
-    }
-
-    /* Resources */
-    .resource-list {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2);
-    }
-
-    .resource-item {
-        display: flex;
-        align-items: center;
-        gap: var(--space-3);
-        padding: var(--space-3);
-        background-color: var(--color-bg-secondary);
-        border-radius: var(--radius-md);
-        transition: all var(--transition-fast);
-    }
-
-    .resource-item:hover {
-        background-color: var(--color-bg-tertiary);
-    }
-
-    .resource-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: var(--radius-md);
-        background-color: var(--color-primary-light);
-        color: var(--color-primary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .resource-info {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .resource-name {
-        font-weight: 500;
-        color: var(--color-text);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .resource-meta {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-    }
-
-    .resource-action {
-        color: var(--color-text-muted);
-        padding: var(--space-1);
-    }
-
-    .resource-action:hover {
-        color: var(--color-primary);
-    }
-
-    /* Whiteboard placeholder */
-    .whiteboard-placeholder {
-        height: 300px;
-        background-color: var(--color-bg-secondary);
-        border-radius: var(--radius-md);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: var(--color-text-secondary);
-        gap: var(--space-2);
-    }
-
-    .whiteboard-placeholder svg {
-        width: 64px;
-        height: 64px;
-        opacity: 0.5;
-    }
-
-    /* Sessions */
-    .session-list {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2);
-    }
-
-    .session-item {
-        padding: var(--space-3);
-        background-color: var(--color-bg-secondary);
-        border-radius: var(--radius-md);
-    }
-
-    .session-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--space-1);
-    }
-
-    .session-user {
-        font-weight: 500;
-        color: var(--color-text);
-        font-size: var(--text-sm);
-    }
-
-    .session-time {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-    }
-
-    .session-stats {
-        display: flex;
-        gap: var(--space-3);
-        font-size: var(--text-xs);
-        color: var(--color-text-secondary);
-    }
-
-    .session-stat {
-        display: flex;
-        align-items: center;
-        gap: var(--space-1);
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: var(--space-8);
-        color: var(--color-text-muted);
-    }
-
-    .empty-state svg {
-        width: 48px;
-        height: 48px;
-        margin: 0 auto var(--space-3);
-        opacity: 0.5;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'base/css/pages/room_detail.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="room-detail-header">
-    <div class="room-header-content">
-        <div class="room-header-main">
-            <div class="room-header-meta">
-                <h1 class="room-name">{{ room.name }}</h1>
+<!-- Room Hero -->
+<section class="room-detail-hero" aria-labelledby="room-title">
+    <div class="room-detail-header">
+        <div class="room-title-section">
+            <div class="room-badges">
                 <span class="room-status-badge room-status-{{ room.status }}">{{ room.get_status_display }}</span>
-                {% if room.topic %}
-                <span class="room-topic-badge">
-                    {% if room.topic.color %}
-                    <span class="topic-color" style="background-color: {{ room.topic.color }}"></span>
-                    {% endif %}
-                    {{ room.topic.name }}
-                </span>
-                {% endif %}
+                <span class="room-type-badge room-type-{{ room.room_type }}">{{ room.get_room_type_display }}</span>
+                {% if room.is_private %}<span class="room-type-badge" style="background-color: #fce7f3; color: #be185d;">Private</span>{% endif %}
             </div>
-            {% if room.description %}
-            <p class="room-description">{{ room.description }}</p>
-            {% endif %}
-            <div class="room-stats">
-                <div class="room-stat">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <h1 id="room-title">{{ room.name }}</h1>
+            <div class="room-meta-row">
+                <div class="room-meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                         <circle cx="9" cy="7" r="4"></circle>
                     </svg>
-                    <span>{{ room.current_participants }} / {{ room.max_participants }} participants</span>
+                    <span>{{ room.current_participants }} / {{ room.max_participants }}</span>
                 </div>
-                <div class="room-stat">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                {% if room.topic %}
+                <div class="room-meta-item">
+                    <span class="topic-color-dot" style="background-color: {{ room.topic.color|default:'#6366f1' }}"></span>
+                    <span>{{ room.topic.name }}</span>
+                </div>
+                {% endif %}
+                <div class="room-meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="M12 6v6l4 2"></path>
                     </svg>
-                    <span>{{ room.focus_duration }}min focus / {{ room.break_duration }}min break</span>
+                    <span>{{ room.get_room_type_display }}</span>
                 </div>
-                <div class="room-stat">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <polyline points="16 18 22 12 16 6"></polyline>
-                        <polyline points="8 6 2 12 8 18"></polyline>
+                {% if room.scheduled_start %}
+                <div class="room-meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
                     </svg>
-                    <span>{{ room.cycles }} cycles</span>
+                    <span>Starts {{ room.scheduled_start|date:"M d, H:i" }}</span>
                 </div>
-            </div>
-            <div class="room-tags">
-                {% if room.enable_video %}<span class="tag">Video</span>{% endif %}
-                {% if room.enable_voice %}<span class="tag">Voice</span>{% endif %}
-                {% if room.enable_chat %}<span class="tag">Chat</span>{% endif %}
-                {% if room.enable_screen_share %}<span class="tag">Screen Share</span>{% endif %}
-                {% if room.enable_whiteboard %}<span class="tag">Whiteboard</span>{% endif %}
-                {% if room.enable_resources %}<span class="tag">Resources</span>{% endif %}
-                {% if room.is_private %}<span class="tag" style="background-color: #fce7f3; color: #be185d;">Private</span>{% endif %}
+                {% endif %}
             </div>
         </div>
-        <div class="room-header-actions">
-            {% if not is_participant %}
-            <form method="POST" action="{% url 'Join Room' room.id %}" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                    </svg>
-                    Join Room
-                </button>
-            </form>
+        <div class="room-actions">
+            {% if user.is_authenticated %}
+                {% if is_participant %}
+                    {% if room.status == 'active' %}
+                    <a href="#" class="btn btn-primary" id="joinRoomBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        </svg>
+                        Enter Room
+                    </a>
+                    {% else %}
+                    <button class="btn btn-secondary" disabled>Room not active</button>
+                    {% endif %}
+                {% else %}
+                    {% if room.status == 'active' and not room.is_full %}
+                    <form method="POST" action="{% url 'Join Room' room.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary" id="joinRoomBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            </svg>
+                            Join Room
+                        </button>
+                    </form>
+                    {% elif room.status == 'scheduled' %}
+                    <button class="btn btn-secondary" disabled>Join when active</button>
+                    {% else %}
+                    <button class="btn btn-secondary" disabled>Room {{ room.get_status_display|lower }}</button>
+                    {% endif %}
+                {% endif %}
             {% else %}
-            <form method="POST" action="{% url 'Leave Room' room.id %}" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-secondary">Leave Room</button>
-            </form>
+                <a href="{% url 'account_login' %}?next={{ request.path }}" class="btn btn-primary">Login to Join</a>
+            {% endif %}
+            {% if user == room.created_by or user.is_staff %}
+            <a href="{% url 'Edit Room' room.id %}" class="btn btn-secondary">Edit</a>
             {% endif %}
         </div>
     </div>
-</div>
+</section>
 
-<div class="room-main">
-    <div class="room-grid">
-        <!-- Main Content: Timer + Chat/Resources/Whiteboard tabs -->
-        <div class="room-main-content">
-            <!-- Timer Section -->
-            <section class="timer-section" aria-labelledby="timer-title">
-                <h2 id="timer-title" class="visually-hidden">Pomodoro Timer</h2>
+<!-- Main Content -->
+<main class="room-main" role="main">
+    <div class="room-layout">
+        <!-- Left Column: Timer & Description -->
+        <section class="room-content" aria-labelledby="timer-heading">
+            <!-- Pomodoro Timer -->
+            <div class="pomodoro-section" aria-labelledby="timer-heading">
+                <header class="pomodoro-header">
+                    <h2 id="timer-heading">Pomodoro Timer</h2>
+                    <div class="timer-mode-toggle" role="group" aria-label="Timer modes">
+                        <button type="button" class="timer-mode-btn active" data-mode="work" data-tooltip="Focus (1)">Focus</button>
+                        <button type="button" class="timer-mode-btn" data-mode="shortBreak" data-tooltip="Short Break (2)">Short Break</button>
+                        <button type="button" class="timer-mode-btn" data-mode="longBreak" data-tooltip="Long Break (3)">Long Break</button>
+                    </div>
+                </header>
+
                 <div class="timer-display">
-                    <div class="timer-phase" id="timerPhase">Focus</div>
-                    <div class="timer-circle" role="timer" aria-live="polite" aria-label="Focus timer">
-                        <svg viewBox="0 0 280 280">
-                            <circle class="timer-circle-bg" cx="140" cy="140" r="136"></circle>
-                            <circle class="timer-circle-progress" id="timerProgress" cx="140" cy="140" r="136"></circle>
+                    <div class="timer-circle" role="img" aria-label="Timer progress">
+                        <svg viewBox="0 0 280 280" aria-hidden="true">
+                            <circle class="timer-circle-bg" cx="140" cy="140" r="140"></circle>
+                            <circle class="timer-circle-progress" cx="140" cy="140" r="140" id="timerCircle"></circle>
                         </svg>
-                        <div class="timer-time" id="timerTime">25:00</div>
+                        <div class="timer-time">
+                            <div class="timer-time-value" id="timerTime">25:00</div>
+                            <div class="timer-time-label" id="timerLabel">Focus Time</div>
+                        </div>
                     </div>
-                    <div class="timer-cycle" id="timerCycle">Cycle 1 of {{ room.cycles }}</div>
+                    <div class="timer-phase-indicator">
+                        <span class="phase-icon work" id="phaseIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></span>
+                        <span id="phaseText">Session {{ room.current_participants }} of {{ room.max_participants }}</span>
+                    </div>
                 </div>
+
                 <div class="timer-controls">
-                    <button class="timer-btn timer-btn-secondary" id="timerResetBtn" aria-label="Reset timer" disabled>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 12a9 9 0 1 0 9-9.97"></path>
-                            <path d="M3 6h5v5"></path>
-                        </svg>
-                    </button>
-                    <button class="timer-btn timer-btn-primary" id="timerStartBtn" aria-label="Start timer">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                        </svg>
-                    </button>
-                    <button class="timer-btn timer-btn-secondary" id="timerPauseBtn" aria-label="Pause timer" style="display: none;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="6" y="4" width="4" height="16"></rect>
-                            <rect x="14" y="4" width="4" height="16"></rect>
-                        </svg>
-                    </button>
-                    <button class="timer-btn timer-btn-secondary" id="timerSkipBtn" aria-label="Skip phase">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                            <line x1="19" y1="3" x2="19" y2="21"></line>
-                        </svg>
-                    </button>
-                </div>
-                <div class="timer-settings">
-                    <h4>Timer Settings</h4>
-                    <div class="settings-grid">
-                        <div class="setting-item">
-                            <span class="setting-label">Focus Duration</span>
-                            <span class="setting-value">{{ room.focus_duration }} min</span>
-                        </div>
-                        <div class="setting-item">
-                            <span class="setting-label">Break Duration</span>
-                            <span class="setting-value">{{ room.break_duration }} min</span>
-                        </div>
-                        <div class="setting-item">
-                            <span class="setting-label">Total Cycles</span>
-                            <span class="setting-value">{{ room.cycles }}</span>
-                        </div>
-                        <div class="setting-item">
-                            <span class="setting-label">Room Type</span>
-                            <span class="setting-value">{{ room.get_room_type_display }}</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Tabs for Chat, Resources, Whiteboard -->
-            <div class="sidebar-card" style="margin-top: var(--space-6);">
-                <div class="sidebar-header">
-                    <div style="display: flex; gap: var(--space-1);">
-                        <button class="tab-btn active" data-tab="chat" style="background: none; border: none; padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); font-weight: 500; color: var(--color-text); cursor: pointer;">Chat</button>
-                        {% if room.enable_resources %}
-                        <button class="tab-btn" data-tab="resources" style="background: none; border: none; padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); font-weight: 500; color: var(--color-text-secondary); cursor: pointer;">Resources</button>
-                        {% endif %}
-                        {% if room.enable_whiteboard %}
-                        <button class="tab-btn" data-tab="whiteboard" style="background: none; border: none; padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); font-weight: 500; color: var(--color-text-secondary); cursor: pointer;">Whiteboard</button>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Chat Tab -->
-                <div class="tab-content" id="chatTab" style="display: block;">
-                    <div class="chat-messages" id="chatMessages" role="log" aria-live="polite">
-                        <div class="empty-state">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    <div class="timer-main-controls">
+                        <button type="button" class="timer-btn timer-btn-primary" id="timerStartBtn" aria-label="Start timer">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
                             </svg>
-                            <p>No messages yet. Start the conversation!</p>
-                        </div>
-                    </div>
-                    <form class="chat-input-form" id="chatForm">
-                        <input type="text" class="chat-input" id="chatInput" placeholder="Type a message..." aria-label="Chat message" autocomplete="off">
-                        <button type="submit" class="chat-send-btn" aria-label="Send message">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="22" y1="2" x2="11" y2="13"></line>
-                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                            </svg>
+                            <span>Start</span>
                         </button>
-                    </form>
-                </div>
-
-                <!-- Resources Tab -->
-                <div class="tab-content" id="resourcesTab" style="display: none;">
-                    <div class="resource-list" id="resourceList">
-                        <div class="empty-state">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <button type="button" class="timer-btn timer-btn-secondary" id="timerPauseBtn" style="display: none;" aria-label="Pause timer">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <rect x="6" y="4" width="4" height="16"></rect>
+                                <rect x="14" y="4" width="4" height="16"></rect>
                             </svg>
-                            <p>No resources shared yet.</p>
-                        </div>
-                    </div>
-                    <div style="padding: var(--space-4); border-top: 1px solid var(--color-border);">
-                        <button class="btn btn-secondary" style="width: 100%;" id="addResourceBtn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <span>Pause</span>
+                        </button>
+                        <button type="button" class="timer-btn timer-btn-secondary" id="timerResetBtn" aria-label="Reset timer" disabled>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <path d="M3 3v5h5"></path>
                             </svg>
-                            Add Resource
+                            <span>Reset</span>
                         </button>
                     </div>
-                </div>
+                    <div class="timer-session-info">
+                        <div class="session-count">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                            <span>Sessions: <strong id="sessionCount">0</strong></span>
+                        </div>
+                    </div>
 
-                <!-- Whiteboard Tab -->
-                <div class="tab-content" id="whiteboardTab" style="display: none;">
-                    <div class="whiteboard-placeholder">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                    <!-- Settings Panel -->
+                    <button type="button" class="settings-toggle" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                         </svg>
-                        <p>Collaborative whiteboard coming soon</p>
+                        <span>Settings</span>
+                    </button>
+                    <div class="settings-panel" id="settingsPanel">
+                        <div class="setting-row">
+                            <div class="setting-group">
+                                <label class="setting-label" for="workDuration">Focus Duration (min)</label>
+                                <input type="number" class="setting-input" id="workDuration" min="1" max="120" value="25">
+                            </div>
+                            <div class="setting-group">
+                                <label class="setting-label" for="shortBreakDuration">Short Break (min)</label>
+                                <input type="number" class="setting-input" id="shortBreakDuration" min="1" max="60" value="5">
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-group">
+                                <label class="setting-label" for="longBreakDuration">Long Break (min)</label>
+                                <input type="number" class="setting-input" id="longBreakDuration" min="1" max="60" value="15">
+                            </div>
+                            <div class="setting-group">
+                                <label class="setting-label" for="sessionsBeforeLongBreak">Sessions before Long Break</label>
+                                <input type="number" class="setting-input" id="sessionsBeforeLongBreak" min="1" max="10" value="4">
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-group">
+                                <label class="setting-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" class="setting-input" id="autoStartBreaks" style="width: auto; margin: 0;">
+                                    Auto-start breaks
+                                </label>
+                            </div>
+                            <div class="setting-group">
+                                <label class="setting-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" class="setting-input" id="autoStartWork" style="width: auto; margin: 0;">
+                                    Auto-start focus
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-group">
+                                <label class="setting-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" class="setting-input" id="soundEnabled" style="width: auto; margin: 0;" checked>
+                                    Notification sounds
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Sidebar: Participants, Recent Sessions -->
-        <aside class="room-sidebar" aria-label="Room sidebar">
+            <!-- Room Description -->
+            {% if room.description %}
+            <div class="sidebar-card" style="margin-top: var(--space-6);">
+                <div class="sidebar-card-header">
+                    <h3>About this Room</h3>
+                </div>
+                <div class="sidebar-card-content">
+                    <div class="room-description-full">{{ room.description|linebreaks }}</div>
+                </div>
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- Right Sidebar -->
+        <aside class="room-sidebar" aria-label="Room information">
             <!-- Participants -->
-            <section class="sidebar-card" aria-labelledby="participants-title">
-                <header class="sidebar-header">
-                    <h3 id="participants-title">Participants</h3>
-                    <span class="room-status-badge room-status-active">{{ active_participants|length }}</span>
-                </header>
-                <div class="sidebar-content">
-                    <div class="participant-list" id="participantList">
-                        {% for p in active_participants %}
-                        <div class="participant-item" data-user-id="{{ p.user.id }}">
+            <div class="sidebar-card">
+                <div class="sidebar-card-header">
+                    <h3>Participants <span style="font-weight: 400; color: var(--color-text-muted); font-size: var(--text-sm);">({{ room.current_participants }}/{{ room.max_participants }})</span></h3>
+                </div>
+                <div class="sidebar-card-content">
+                    {% if active_participants %}
+                    <div class="participants-list">
+                        {% for participant in active_participants %}
+                        <div class="participant-item">
                             <div class="participant-avatar">
-                                {% if p.user.profile.avatar %}
-                                <img src="{{ p.user.profile.avatar.url }}" alt="{{ p.user.username }}">
-                                {% else %}
-                                {{ p.user.username|first|upper }}
-                                {% endif %}
+                                {{ participant.user.username|first|upper }}
                             </div>
                             <div class="participant-info">
-                                <div class="participant-name">{{ p.user.username }}</div>
-                                <div class="participant-role">{{ p.get_role_display }}</div>
+                                <div class="participant-name">{{ participant.user.get_full_name|default:participant.user.username }}</div>
+                                <div class="participant-role">{{ participant.get_role_display }}</div>
                             </div>
-                            <div class="participant-status">
-                                <span class="status-dot {% if p.has_audio and not p.is_muted %}active{% elif p.has_audio and p.is_muted %}muted{% else %}off{% endif %}"></span>
-                                {% if p.has_video and not p.is_camera_off %}
-                                <span class="status-dot active" style="background-color: var(--color-info);"></span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% empty %}
-                        <div class="empty-state">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                            </svg>
-                            <p>No participants yet</p>
+                            <div class="participant-status {% if participant.is_online %}online{% elif participant.is_away %}away{% else %}offline{% endif %}" title="{% if participant.is_online %}Online{% elif participant.is_away %}Away{% else %}Offline{% endif %}"></div>
                         </div>
                         {% endfor %}
                     </div>
+                    {% else %}
+                    <div class="sidebar-empty">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                        </svg>
+                        <p>No participants yet</p>
+                        <small>Be the first to join!</small>
+                    </div>
+                    {% endif %}
                 </div>
-            </section>
+            </div>
 
-            <!-- Recent Sessions -->
-            <section class="sidebar-card" aria-labelledby="sessions-title">
-                <header class="sidebar-header">
-                    <h3 id="sessions-title">Recent Sessions</h3>
-                </header>
-                <div class="sidebar-content">
-                    <div class="session-list">
-                        {% for session in recent_sessions %}
-                        <div class="session-item">
-                            <div class="session-header">
-                                <span class="session-user">{{ session.user.username }}</span>
-                                <span class="session-time">{{ session.started_at|date:"M d, H:i" }}</span>
+            <!-- Room Features -->
+            <div class="sidebar-card">
+                <div class="sidebar-card-header">
+                    <h3>Features</h3>
+                </div>
+                <div class="sidebar-card-content">
+                    <div class="feature-list">
+                        <div class="feature-item">
+                            <div class="feature-icon {% if room.enable_video %}enabled{% else %}disabled{% endif %}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
                             </div>
-                            <div class="session-stats">
-                                <span class="session-stat">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <path d="M12 6v6l4 2"></path>
-                                    </svg>
-                                    {{ session.actual_focus_minutes }}min
-                                </span>
-                                <span class="session-stat">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="16 18 22 12 16 6"></polyline>
-                                        <polyline points="8 6 2 12 8 18"></polyline>
-                                    </svg>
-                                    {{ session.cycles_completed }} cycles
-                                </span>
+                            <span class="feature-label">Video</span>
+                            <span class="feature-value">{% if room.enable_video %}Enabled{% else %}Disabled{% endif %}</span>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon {% if room.enable_voice %}enabled{% else %}disabled{% endif %}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
                             </div>
+                            <span class="feature-label">Voice Chat</span>
+                            <span class="feature-value">{% if room.enable_voice %}Enabled{% else %}Disabled{% endif %}</span>
                         </div>
-                        {% empty %}
-                        <div class="empty-state">
-                            <p>No completed sessions yet</p>
+                        <div class="feature-item">
+                            <div class="feature-icon {% if room.enable_chat %}enabled{% else %}disabled{% endif %}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                            </div>
+                            <span class="feature-label">Text Chat</span>
+                            <span class="feature-value">{% if room.enable_chat %}Enabled{% else %}Disabled{% endif %}</span>
                         </div>
-                        {% endfor %}
+                        <div class="feature-item">
+                            <div class="feature-icon {% if room.enable_screen_share %}enabled{% else %}disabled{% endif %}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                            </div>
+                            <span class="feature-label">Screen Share</span>
+                            <span class="feature-value">{% if room.enable_screen_share %}Enabled{% else %}Disabled{% endif %}</span>
+                        </div>
                     </div>
                 </div>
-            </section>
+            </div>
+
+            <!-- Chat Panel -->
+            {% if room.enable_chat %}
+            <div class="sidebar-card chat-panel">
+                <div class="sidebar-card-header">
+                    <h3>Chat</h3>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Messages loaded via JS -->
+                </div>
+                <form class="chat-input-form" id="chatInputForm">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Type a message..." aria-label="Chat message" autocomplete="off">
+                    <button type="submit" class="chat-send-btn" id="chatSendBtn" aria-label="Send message">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+            {% endif %}
         </aside>
     </div>
-</div>
+</main>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    // Room Detail Page JavaScript
-    document.addEventListener('DOMContentLoaded', function() {
-        // Timer variables
-        let timerState = 'idle'; // idle, running, paused
-        let currentPhase = 'focus'; // focus, break
-        let currentCycle = 1;
-        let timeRemaining = {{ room.focus_duration }} * 60;
-        let totalPhaseTime = {{ room.focus_duration }} * 60;
-        let timerInterval = null;
-        const maxCycles = {{ room.cycles }};
-        const focusDuration = {{ room.focus_duration }};
-        const breakDuration = {{ room.break_duration }};
-        const circumference = 2 * Math.PI * 136;
-
-        const timerProgress = document.getElementById('timerProgress');
-        const timerTime = document.getElementById('timerTime');
-        const timerPhase = document.getElementById('timerPhase');
-        const timerCycle = document.getElementById('timerCycle');
-        const timerStartBtn = document.getElementById('timerStartBtn');
-        const timerPauseBtn = document.getElementById('timerPauseBtn');
-        const timerResetBtn = document.getElementById('timerResetBtn');
-        const timerSkipBtn = document.getElementById('timerSkipBtn');
-
-        // Initialize timer circle
-        timerProgress.style.strokeDasharray = circumference;
-        timerProgress.style.strokeDashoffset = 0;
-
-        function updateTimerDisplay() {
-            const minutes = Math.floor(timeRemaining / 60);
-            const seconds = timeRemaining % 60;
-            timerTime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-            // Update progress circle
-            const progress = 1 - (timeRemaining / totalPhaseTime);
-            timerProgress.style.strokeDashoffset = circumference * progress;
-
-            // Color coding
-            timerProgress.classList.remove('warning', 'danger');
-            if (progress > 0.75) {
-                timerProgress.classList.add('warning');
-            }
-            if (progress > 0.9) {
-                timerProgress.classList.add('danger');
-            }
-        }
-
-        function updatePhaseDisplay() {
-            timerPhase.textContent = currentPhase === 'focus' ? 'Focus' : 'Break';
-            timerCycle.textContent = `Cycle ${currentCycle} of ${maxCycles}`;
-        }
-
-        function startTimer() {
-            if (timerState === 'running') return;
-
-            timerState = 'running';
-            timerStartBtn.style.display = 'none';
-            timerPauseBtn.style.display = 'flex';
-            timerResetBtn.disabled = false;
-
-            timerInterval = setInterval(() => {
-                timeRemaining--;
-                updateTimerDisplay();
-
-                if (timeRemaining <= 0) {
-                    phaseComplete();
-                }
-            }, 1000);
-        }
-
-        function pauseTimer() {
-            if (timerState !== 'running') return;
-
-            timerState = 'paused';
-            timerStartBtn.style.display = 'flex';
-            timerPauseBtn.style.display = 'none';
-            clearInterval(timerInterval);
-        }
-
-        function resetTimer() {
-            clearInterval(timerInterval);
-            timerState = 'idle';
-            currentPhase = 'focus';
-            currentCycle = 1;
-            timeRemaining = focusDuration * 60;
-            totalPhaseTime = focusDuration * 60;
-            timerStartBtn.style.display = 'flex';
-            timerPauseBtn.style.display = 'none';
-            timerResetBtn.disabled = true;
-            updateTimerDisplay();
-            updatePhaseDisplay();
-        }
-
-        function phaseComplete() {
-            clearInterval(timerInterval);
-
-            if (currentPhase === 'focus') {
-                // Focus complete, start break
-                currentPhase = 'break';
-                timeRemaining = breakDuration * 60;
-                totalPhaseTime = breakDuration * 60;
-                showToast('Focus session complete! Take a break.', 'success');
-            } else {
-                // Break complete
-                if (currentCycle >= maxCycles) {
-                    // All cycles complete
-                    showToast('All cycles complete! Great work!', 'success');
-                    resetTimer();
-                    return;
-                } else {
-                    // Next cycle
-                    currentCycle++;
-                    currentPhase = 'focus';
-                    timeRemaining = focusDuration * 60;
-                    totalPhaseTime = focusDuration * 60;
-                }
-            }
-
-            updatePhaseDisplay();
-            updateTimerDisplay();
-
-            // Auto-start next phase
-            startTimer();
-        }
-
-        function skipPhase() {
-            phaseComplete();
-        }
-
-        // Event listeners
-        timerStartBtn.addEventListener('click', startTimer);
-        timerPauseBtn.addEventListener('click', pauseTimer);
-        timerResetBtn.addEventListener('click', resetTimer);
-        timerSkipBtn.addEventListener('click', skipPhase);
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-            if (e.code === 'Space') {
-                e.preventDefault();
-                if (timerState === 'running') {
-                    pauseTimer();
-                } else {
-                    startTimer();
-                }
-            } else if (e.code === 'KeyR') {
-                resetTimer();
-            } else if (e.code === 'KeyS') {
-                skipPhase();
-            }
-        });
-
-        // Tab switching
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const tab = this.dataset.tab;
-
-                document.querySelectorAll('.tab-btn').forEach(b => {
-                    b.classList.remove('active');
-                    b.style.color = 'var(--color-text-secondary)';
-                });
-                this.classList.add('active');
-                this.style.color = 'var(--color-text)';
-
-                document.querySelectorAll('.tab-content').forEach(c => {
-                    c.style.display = 'none';
-                });
-                document.getElementById(tab + 'Tab').style.display = 'block';
-            });
-        });
-
-        // Chat form
-        const chatForm = document.getElementById('chatForm');
-        const chatInput = document.getElementById('chatInput');
-        const chatMessages = document.getElementById('chatMessages');
-
-        chatForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const message = chatInput.value.trim();
-            if (!message) return;
-
-            addChatMessage(message, true);
-            chatInput.value = '';
-
-            // Simulate response after 1-3 seconds
-            setTimeout(() => {
-                const responses = [
-                    'Great focus everyone!',
-                    'How\'s the session going?',
-                    'Time for a break soon.',
-                    'Keep it up!',
-                    'Nice work on that cycle.'
-                ];
-                addChatMessage(responses[Math.floor(Math.random() * responses.length)], false);
-            }, 1000 + Math.random() * 2000);
-        });
-
-        function addChatMessage(text, isOwn) {
-            // Remove empty state if present
-            const emptyState = chatMessages.querySelector('.empty-state');
-            if (emptyState) emptyState.remove();
-
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message ${isOwn ? 'own' : ''}`;
-            messageDiv.innerHTML = `
-                <div class="chat-message-avatar">${isOwn ? 'You' : 'U'}</div>
-                <div class="chat-message-content">
-                    <div class="chat-message-header">
-                        <span class="chat-message-name">${isOwn ? 'You' : 'User'}</span>
-                        <span class="chat-message-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</span>
-                    </div>
-                    <div class="chat-message-text">${escapeHtml(text)}</div>
-                </div>
-            `;
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Initialize
-        updateTimerDisplay();
-        updatePhaseDisplay();
-
-        // Simulate some chat messages
-        setTimeout(() => {
-            addChatMessage('Welcome to the room!', false);
-        }, 500);
-    });
-</script>
+<script src="{% static 'base/js/pages/room_detail.js' %}"></script>
 {% endblock %}
